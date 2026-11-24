@@ -146,7 +146,8 @@ describe('UpdateService.check edge cases', () => {
   })
 })
 
-describe('SWAP_SCRIPT (real shell)', () => {
+// The script uses macOS `ditto` (the updater only runs on macOS); Linux CI skips it.
+describe.skipIf(process.platform !== 'darwin')('SWAP_SCRIPT (real shell)', () => {
   it('waits for the app to exit, swaps the bundle and removes the old one', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'vd-swap-'))
     const target = join(dir, 'ViewDeck.app')

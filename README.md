@@ -36,8 +36,9 @@ with no bastion host, no SSH keys and no stored passwords. **Free forever.**
 
 ## 📦 Install
 
-**Homebrew** (recommended). This also installs the AWS CLI and the Session Manager plugin
-that the AWS features use:
+**Homebrew** (recommended, macOS 13 Ventura or later). It also installs the AWS CLI and
+the Session Manager plugin that the AWS features use, skipping them if Homebrew already
+has them:
 
 ```sh
 brew install --cask adityagaddhyan/tap/viewdeck
