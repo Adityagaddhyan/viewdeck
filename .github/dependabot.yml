@@ -17,6 +17,9 @@ updates:
       # Types must match the Node major the app runs on (CI and Electron use Node 24).
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # v9 is a rewrite (renamed core APIs, opt-in feature plugins); migrate the grid deliberately.
+      - dependency-name: '@tanstack/react-table'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
