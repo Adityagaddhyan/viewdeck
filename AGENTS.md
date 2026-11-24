@@ -32,6 +32,7 @@ Deeper docs:
 | Unit tests (Vitest, plain Node; DB integration tests auto-skip) | `npm test` |
 | Postgres integration tests (starts a local TLS Postgres in `.pgtest/`, needs `brew install postgresql@18`) | `npm run test:integration` |
 | End-to-end smoke test (builds, starts test Postgres, drives the real Electron app with Playwright, screenshots in `e2e/.artifacts/`) | `npm run test:e2e` |
+| Record the README demo GIF `docs/images/demo.gif` (drives the built app against the test Postgres; needs ffmpeg) | `npm run demo:gif` |
 | Regenerate the lean Monaco entry (after upgrading monaco-editor) | `npm run gen:monaco` |
 | Re-render `resources/icon.png` from `icon.svg` (black and white app icon) | `npm run gen:icon` |
 | Rename the dev `Electron.app` to ViewDeck so the macOS menu bar shows ViewDeck (runs on `postinstall`) | `npm run brand:electron` |

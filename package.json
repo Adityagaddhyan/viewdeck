@@ -48,7 +48,8 @@
     "check:docs": "node scripts/check-docs.mjs",
     "verify": "npm run typecheck && npm test && npm run check:docs",
     "brand:electron": "node scripts/brand-dev-electron.mjs",
-    "gen:icon": "electron scripts/render-icon.cjs resources/icon.svg resources/icon.png 1024"
+    "gen:icon": "electron scripts/render-icon.cjs resources/icon.svg resources/icon.png 1024",
+    "demo:gif": "npm run build && scripts/start-test-postgres.sh node scripts/record-demo.mjs"
   },
   "devDependencies": {
     "@monaco-editor/react": "4.7.0",
