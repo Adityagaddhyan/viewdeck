@@ -1,28 +1,52 @@
 <div align="center">
 
-<img src="resources/icon.png" width="96" alt="ViewDeck icon" />
+<img src="resources/icon.png" width="96" alt="ViewDeck, a free database GUI client" />
 
-# ViewDeck
+# ViewDeck: free, open-source database GUI for PostgreSQL and AWS RDS
 
-**A fast, keyboard-first desktop client for your databases.**
-Query, browse and safely edit data, with first-class support for databases that live in the cloud.
+**A fast, keyboard-first desktop SQL client.** Connect to PostgreSQL, Amazon RDS and
+Aurora (even private databases inside a VPC) in seconds, with no bastion host, no SSH
+keys and no stored passwords.
 
-macOS · Electron · MIT licensed
+**100% free and open source (MIT).** No account, no paid tier, no telemetry.
+
+macOS · PostgreSQL · Amazon RDS · Aurora · AWS SSO · MIT licensed
 
 </div>
 
-![ViewDeck: SQL editor with live filtering of query results](docs/images/results-filter.png)
+![ViewDeck SQL client: query editor with live filtering of PostgreSQL query results](docs/images/results-filter.png)
 
-ViewDeck is a database GUI for developers who live in the keyboard. It pairs a real SQL
-editor with a fast virtualised grid, makes writes safe by default, and connects to
-cloud-hosted databases (including private ones behind a VPC) without SSH keys or stored
-passwords.
+## Why ViewDeck?
 
-It is built engine-agnostic from day one: the UI talks to a small `DatabaseDriver`
-contract, so new databases plug in without touching the app. **PostgreSQL is supported
-today**, and more engines are on the way.
+If your databases live on AWS, getting to them is usually the hardest part of your day:
 
-## Databases
+- **Private RDS means a bastion dance.** You open a terminal, start an SSH tunnel or an
+  `aws ssm start-session` port forward, remember which local port you used, and then
+  point your SQL client at `localhost`. When the tunnel dies, you start over.
+- **IAM database auth tokens expire every 15 minutes.** Most clients treat the token as
+  a static password, so you end up pasting a fresh `generate-db-auth-token` output
+  again and again.
+- **TLS breaks through tunnels.** The certificate is for `*.rds.amazonaws.com`, but
+  you're connecting to `127.0.0.1`, so people switch verification off.
+- **One wrong query on prod is one too many.** An `UPDATE` without a `WHERE`, or a cell
+  edit that writes straight away, against a production database.
+- **Good database tools cost money**, and many want an account or phone home.
+
+**ViewDeck handles all of it for you.** Pick an AWS profile, sign in with SSO, choose an
+RDS instance from the list, and you're in. The tunnel, the IAM tokens and `verify-full`
+TLS are handled for you. Prod is read-only by default, edits are staged and shown as
+exact SQL before anything is written, and the whole app is free.
+
+It is also built to grow beyond Postgres: the UI talks to a small `DatabaseDriver`
+contract, so new database engines plug in without changes to the app.
+
+## Free and open source
+
+ViewDeck is completely free: MIT licensed, with no paid "pro" features, no license key,
+no sign-up and no usage tracking. The only network traffic is to your own databases and
+to AWS. Use it at work or at home, fork it, or add your own database driver.
+
+## Supported databases
 
 | Engine | Status |
 | --- | --- |
@@ -47,7 +71,7 @@ today**, and more engines are on the way.
   warnings. ANALYZE runs inside a transaction that is always rolled back.
 - Recent and starred queries, statement timeouts, and cancel for long-running queries.
 
-![Run several queries and copy every result at once](docs/images/run-all.png)
+![Run multiple SQL queries at once and copy every result in one click](docs/images/run-all.png)
 
 ### Explore results
 - **Live filter**: type a SQL `WHERE` condition above any result and the rows narrow as
@@ -65,12 +89,12 @@ today**, and more engines are on the way.
 
 <table>
 <tr>
-<td><img src="docs/images/explain.png" alt="EXPLAIN ANALYZE plan tree" /></td>
-<td><img src="docs/images/split-compare.png" alt="Split view and row comparison" /></td>
+<td><img src="docs/images/explain.png" alt="PostgreSQL EXPLAIN ANALYZE query plan visualizer" /></td>
+<td><img src="docs/images/split-compare.png" alt="Split view and side-by-side row comparison in a database GUI" /></td>
 </tr>
 <tr>
-<td><img src="docs/images/json-viewer.png" alt="JSON tree viewer" /></td>
-<td><img src="docs/images/light-mode.png" alt="Light theme" /></td>
+<td><img src="docs/images/json-viewer.png" alt="JSONB column viewer with collapsible JSON tree" /></td>
+<td><img src="docs/images/light-mode.png" alt="ViewDeck SQL client in light mode" /></td>
 </tr>
 </table>
 
@@ -83,7 +107,7 @@ today**, and more engines are on the way.
 - **Destructive SQL asks first**: `UPDATE`/`DELETE` without `WHERE`, `TRUNCATE`, `DROP`.
   On prod you type the database name to confirm.
 
-![Reviewing staged changes as exact SQL before commit](docs/images/staged-edits.png)
+![Staged table edits reviewed as exact parameterised SQL before commit](docs/images/staged-edits.png)
 
 ### Connect to cloud databases
 - **AWS built in.** Pick a profile from `~/.aws`, sign in with AWS SSO inline, and pick
@@ -140,7 +164,42 @@ npm run dist           # package a .dmg / .zip into release/ (docs/PACKAGING.md)
 - [`docs/ROADMAP.md`](docs/ROADMAP.md): what's next.
 - [`docs/adr/`](docs/adr/): why the big decisions were made.
 
-Contributions are welcome, especially new database drivers.
+Contributions are welcome, especially new database drivers. If ViewDeck saves you time,
+a ⭐ on GitHub helps other developers find it.
+
+## FAQ
+
+**Is ViewDeck free?**
+Yes, completely: MIT-licensed open source, with no paid tier, no account and no telemetry.
+
+**How do I connect to a private RDS or Aurora PostgreSQL database without a bastion host or SSH keys?**
+Choose the **SSM tunnel** route when you add an AWS connection. ViewDeck starts an AWS
+Systems Manager port forward through an SSM-managed EC2 instance in the same VPC, keeps
+it alive while you work, and closes it when you disconnect. If you're already on a VPN
+that reaches the VPC, the **Direct** route connects straight to the endpoint.
+
+**Does it support RDS IAM database authentication?**
+Yes. ViewDeck signs a fresh IAM auth token for every new pooled connection, so the
+15-minute expiry never interrupts you, and it verifies TLS against the real RDS
+hostname, even through a tunnel.
+
+**Does it work with AWS SSO (IAM Identity Center)?**
+Yes. It reads your profiles from `~/.aws` and offers an inline "Sign in with AWS SSO"
+when a session has expired.
+
+**How is it different from TablePlus, DataGrip, DBeaver or pgAdmin?**
+Those are great general-purpose tools. ViewDeck is free and focused: AWS connectivity
+(SSO, RDS discovery, IAM tokens, SSM tunnels) is built in rather than bolted on, writes
+are safe by default (staged edits, read-only prod, destructive-query checks), and the
+whole app is designed for the keyboard.
+
+**Which databases are supported?**
+PostgreSQL today, including Amazon RDS and Aurora PostgreSQL. MySQL/MariaDB, SQLite and
+ClickHouse are planned; see [adding a database engine](docs/ADDING_A_DATABASE.md).
+
+**Windows or Linux?**
+ViewDeck is built and tested on macOS today. It's an Electron app, so Windows and Linux
+builds are possible and contributions are welcome.
 
 ## Security model
 

@@ -3,7 +3,29 @@
   "productName": "ViewDeck",
   "version": "0.1.0",
   "private": true,
-  "description": "Keyboard-first, AWS-native multi-database desktop GUI.",
+  "description": "Free, open-source, keyboard-first database GUI for PostgreSQL, Amazon RDS and Aurora: AWS SSO, IAM auth and SSM tunnels built in.",
+  "keywords": [
+    "database",
+    "database-gui",
+    "sql-client",
+    "postgresql",
+    "postgres",
+    "aws",
+    "rds",
+    "aurora",
+    "ssm",
+    "iam-authentication",
+    "electron",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/Adityagaddhyan/viewdeck",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Adityagaddhyan/viewdeck.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Adityagaddhyan/viewdeck/issues"
+  },
   "main": "./out/main/index.js",
   "engines": {
     "node": ">=22.13"

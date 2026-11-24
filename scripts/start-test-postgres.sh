@@ -10,7 +10,8 @@
 #         (npm run test:integration does the latter). Port: $VIEWDECK_PG_TEST_PORT or 55432.
 # Stop:   pg_ctl -D .pgtest/data stop
 #
-# Needs Postgres server binaries (e.g. `brew install postgresql@18`).
+# Needs Postgres server binaries (e.g. `brew install postgresql@18`). Set PG_BIN to pick a
+# specific bin dir (CI does, since Ubuntu runners ship several versions).
 # Data lives in ./.pgtest (gitignored).
 set -euo pipefail
 
@@ -23,7 +24,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)/.pgtest"
 PASSWORD="viewdeck-test"
 
 BIN=""
-for d in /opt/homebrew/opt/postgresql@18/bin /opt/homebrew/opt/postgresql@17/bin /usr/local/opt/postgresql@18/bin /usr/lib/postgresql/*/bin; do
+for d in ${PG_BIN:-} /opt/homebrew/opt/postgresql@18/bin /opt/homebrew/opt/postgresql@17/bin /usr/local/opt/postgresql@18/bin /usr/lib/postgresql/*/bin; do
   if [ -x "$d/postgres" ]; then BIN="$d"; break; fi
 done
 if [ -z "$BIN" ]; then

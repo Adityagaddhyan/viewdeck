@@ -364,6 +364,20 @@ to change.
 - Never commit `.env`, `*.sqlite`, `out/`, `dist/`, `release/`, `.claude/` or
   `node_modules/` (see `.gitignore`).
 
+## CI and repo rules
+
+GitHub Actions (`.github/workflows/`), with actions pinned to commit SHAs and a read-only token:
+
+- `ci.yml`: on every push to `main` and every PR. `verify` (Linux), `integration`
+  (Linux, Postgres 18 from PGDG, `PG_BIN` picks it) and `e2e` (macOS, Homebrew Postgres 18).
+  These three are the required status checks on `main`.
+- `codeql.yml`: CodeQL for TypeScript and the workflows (PRs, `main`, weekly).
+- `dependabot.yml`: weekly grouped npm and Actions updates with a 14-day cooldown.
+  When pinning a new action by hand, use a release that is at least two weeks old.
+
+`main` is protected: PRs need passing checks and a code-owner review (`.github/CODEOWNERS`),
+and force-push and deletion are blocked. The owner may bypass, for solo pushes.
+
 ## Keeping docs in sync
 
 `npm run check:docs` enforces the mechanical part: IPC channels and events in
