@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- ViewDeck: black macOS tile (824px on the 1024 grid), white database-cylinder mark. -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="#000"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="184.5" fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="3"/>
+  <ellipse cx="512" cy="344" rx="232" ry="76" fill="#fff"/>
+  <g fill="none" stroke="#fff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M298 344v340c0 39 96 70 214 70s214-31 214-70V344" stroke-linecap="butt"/>
+    <path d="M298 455c0 39 96 70 214 70s214-31 214-70"/>
+    <path d="M298 570c0 39 96 70 214 70s214-31 214-70"/>
+  </g>
+</svg>

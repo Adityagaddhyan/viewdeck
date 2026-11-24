@@ -1,0 +1,45 @@
+# Packaging (electron-builder). `npm run dist` builds out/ first, then packages it into release/.
+#
+# - resources/ is copied as extraResources: main reads it from process.resourcesPath
+#   (src/main/resources.ts), e.g. the RDS CA bundle that TLS over SSM tunnels needs.
+# - Signing: with no Developer ID certificate in the keychain (or CSC_LINK), the app is
+#   ad-hoc signed and Gatekeeper warns on first open (right-click → Open). Notarisation
+#   runs only when APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID are set.
+# - No publish target yet (no releases are uploaded). Auto-update needs a
+#   signed build and a feed URL; see docs/PACKAGING.md.
+appId: dev.viewdeck.app
+productName: ViewDeck
+copyright: Copyright © ViewDeck
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+  - "!**/*.map"
+extraResources:
+  - from: resources/rds-global-bundle.pem
+    to: rds-global-bundle.pem
+  - from: resources/icon.png
+    to: icon.png
+asar: true
+publish: null
+npmRebuild: false
+mac:
+  target:
+    - target: dmg
+    - target: zip
+  category: public.app-category.developer-tools
+  icon: resources/icon.png
+  artifactName: ${productName}-${version}-${arch}-mac.${ext}
+  hardenedRuntime: true
+  notarize: false
+  extendInfo:
+    NSHumanReadableCopyright: Copyright © ViewDeck
+dmg:
+  artifactName: ${productName}-${version}-${arch}.${ext}
+linux:
+  target: AppImage
+  category: Development
+win:
+  target: nsis
