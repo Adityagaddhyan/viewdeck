@@ -1,29 +1,58 @@
-# Release: pushing a tag like v0.2.0 builds the macOS app (Apple Silicon + Intel, .dmg and
-# .zip, ad-hoc signed) and publishes a GitHub Release with the files and their SHA-256
-# checksums (the Homebrew cask uses the .zip checksums).
+# Release automatically when package.json's version changes on main.
 #
-#   npm version 0.2.0 --no-git-tag-version && git commit -am "chore: release 0.2.0"
-#   git tag v0.2.0 && git push origin main v0.2.0
+#   npm version 0.2.0 --no-git-tag-version && git commit -am "chore: release 0.2.0" && git push
+#
+# On every push to main this checks whether tag v<version> exists. If not, it builds the macOS
+# app (Apple Silicon + Intel, .dmg and .zip, ad-hoc signed), publishes a GitHub Release (which
+# creates the tag) with the files and SHA256SUMS.txt, and then bumps the Homebrew cask in
+# Adityagaddhyan/homebrew-tap (needs the HOMEBREW_TAP_TOKEN secret; skipped with a notice
+# without it). Can also be run by hand from the Actions tab.
 name: Release
 
 on:
   push:
-    tags: ['v*.*.*']
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 jobs:
+  check:
+    name: Is this a new version?
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: v
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags "https://github.com/$GITHUB_REPOSITORY.git" "refs/tags/v$v" >/dev/null; then
+            echo "release=false" >> "$GITHUB_OUTPUT"; echo "v$v is already released."
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"; echo "v$v is new: releasing."
+          fi
+
   build-and-publish:
-    name: Build and publish macOS release
+    name: Build and publish v${{ needs.check.outputs.version }}
+    needs: check
+    if: needs.check.outputs.release == 'true'
     runs-on: macos-15
     timeout-minutes: 45
     permissions:
-      contents: write # create the release and upload assets
+      contents: write # create the release + tag and upload assets
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,10 +61,6 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - name: Check the tag matches package.json
-        run: |
-          v="$(node -p "require('./package.json').version")"
-          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME does not match package.json version $v"; exit 1; }
       - run: npm ci
       - run: npm run verify
       - name: Build .dmg and .zip (arm64 + x64)
@@ -62,7 +87,9 @@ jobs:
             echo 'brew install --cask adityagaddhyan/tap/viewdeck'
             echo '```'
             echo
-            echo '**Download:** `ViewDeck-*-arm64.dmg` for Apple Silicon, `ViewDeck-*-x64.dmg` for Intel. Open it and drag ViewDeck to Applications.'
+            echo "**Download:** \`ViewDeck-$VERSION-arm64.dmg\` for Apple Silicon, \`ViewDeck-$VERSION-x64.dmg\` for Intel. Open it and drag ViewDeck to Applications."
+            echo
+            echo 'Already installed? ViewDeck offers the update itself (**Update now → Restart**).'
             echo
             echo 'Builds are not notarised yet. On first launch macOS says it cannot verify the developer: open **System Settings → Privacy & Security** and click **Open Anyway** (once).'
             echo
@@ -72,9 +99,44 @@ jobs:
             cat release/SHA256SUMS.txt
             echo '```'
           } > notes.md
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "v$VERSION" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "ViewDeck ${GITHUB_REF_NAME#v}" \
+            --target "$GITHUB_SHA" \
+            --title "ViewDeck $VERSION" \
             --notes-file notes.md \
             --generate-notes \
             release/ViewDeck-*.dmg release/ViewDeck-*.zip release/SHA256SUMS.txt
+
+  homebrew:
+    name: Bump Homebrew cask
+    needs: [check, build-and-publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - name: Skip without a tap token
+        if: env.TAP_TOKEN == ''
+        run: echo "::notice::HOMEBREW_TAP_TOKEN is not set, so update the cask by hand with scripts/bump-cask.mjs $VERSION <tap checkout>."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.TAP_TOKEN != ''
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.TAP_TOKEN != ''
+        with:
+          repository: Adityagaddhyan/homebrew-tap
+          path: homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      - name: Update Casks/viewdeck.rb and push
+        if: env.TAP_TOKEN != ''
+        run: |
+          node scripts/bump-cask.mjs "$VERSION" homebrew-tap
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/viewdeck.rb
+          git diff --cached --quiet && { echo "Cask already up to date."; exit 0; }
+          git commit -m "viewdeck $VERSION"
+          git push

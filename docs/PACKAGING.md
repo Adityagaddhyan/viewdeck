@@ -38,17 +38,27 @@ To remove the prompt entirely (needs an Apple Developer account):
 
 ## Releasing
 
-`.github/workflows/release.yml` runs on a `v*.*.*` tag:
+Releases are automatic: **bump the version on `main`** and CI does the rest.
 
 ```sh
-npm version 0.2.0 --no-git-tag-version && git commit -am "chore: release 0.2.0"
-git tag v0.2.0 && git push origin main v0.2.0
+npm version 0.2.0 --no-git-tag-version && git commit -am "chore: release 0.2.0" && git push
 ```
 
-It checks that the tag matches `package.json` and runs `npm run verify`. It then builds the
-`.dmg` and `.zip` for arm64 and x64, verifies the signatures and publishes a GitHub Release
-with the files and `SHA256SUMS.txt`. Then update the Homebrew cask:
-`node scripts/bump-cask.mjs 0.2.0 ../homebrew-tap`, commit and push in the tap repo.
+`.github/workflows/release.yml` runs on every push to `main`. If tag `v<version>` doesn't
+exist yet, it:
+
+1. runs `npm run verify`, builds the `.dmg` and `.zip` for arm64 and x64, and verifies the
+   signatures;
+2. publishes a GitHub Release `v<version>` (this creates the tag) with the files and
+   `SHA256SUMS.txt`;
+3. bumps `Casks/viewdeck.rb` in
+   [`Adityagaddhyan/homebrew-tap`](https://github.com/Adityagaddhyan/homebrew-tap) with
+   `scripts/bump-cask.mjs` and pushes it.
+
+Step 3 needs a repository secret **`HOMEBREW_TAP_TOKEN`**: a fine-grained personal access
+token with *Contents: Read and write* on `homebrew-tap` only. Without it the step is skipped
+with a notice, and you run `node scripts/bump-cask.mjs <version> <tap checkout>` by hand.
+Installed apps pick up the release through the in-app updater.
 
 ## In-app updates
 
