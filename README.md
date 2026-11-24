@@ -4,6 +4,17 @@
 
 # ViewDeck: free, open-source database GUI for PostgreSQL and AWS RDS
 
+[![CI](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Free forever](https://img.shields.io/badge/price-free-brightgreen.svg)](#free-and-open-source)
+[![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg?logo=apple)](#install)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-supported-336791.svg?logo=postgresql&logoColor=white)](#supported-databases)
+[![AWS RDS](https://img.shields.io/badge/AWS-RDS%20%C2%B7%20Aurora%20%C2%B7%20SSO-FF9900.svg?logo=amazonwebservices&logoColor=white)](#connect-to-cloud-databases)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-025E8C.svg?logo=dependabot)](.github/dependabot.yml)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![GitHub stars](https://img.shields.io/github/stars/Adityagaddhyan/viewdeck?style=social)](https://github.com/Adityagaddhyan/viewdeck/stargazers)
+
 **A fast, keyboard-first desktop SQL client.** Connect to PostgreSQL, Amazon RDS and
 Aurora (even private databases inside a VPC) in seconds, with no bastion host, no SSH
 keys and no stored passwords.
