@@ -58,6 +58,7 @@ export class UpdateService {
   private assets: ReleaseAssets | null = null
   private timer: ReturnType<typeof setInterval> | null = null
   private relaunch = false
+  private inFlight: Promise<UpdateStatus> | null = null
 
   constructor(private readonly deps: UpdateServiceDeps) {
     this.status = { state: 'idle', current: deps.currentVersion, checkedAt: null }
@@ -70,6 +71,7 @@ export class UpdateService {
   /** Schedules the first check shortly after launch, then every 12 hours. */
   start(): void {
     if (this.deps.disableTimers || this.timer) return
+    void this.deps.installer.cleanup() // leftovers from earlier downloads
     const tick = (): void => {
       if (this.deps.autoCheckEnabled() && (this.status.state === 'idle' || this.status.state === 'error')) void this.check()
     }
@@ -78,9 +80,18 @@ export class UpdateService {
     this.timer.unref?.()
   }
 
-  /** Asks GitHub for the latest release. Never throws; the outcome is the returned status. */
-  async check(): Promise<UpdateStatus> {
-    if (this.status.state === 'downloading' || this.status.state === 'ready') return this.status
+  /**
+   * Asks GitHub for the latest release. Never throws; the outcome is the returned status.
+   * Concurrent calls share one request. A failed re-check keeps an already-found update.
+   */
+  check(): Promise<UpdateStatus> {
+    if (this.status.state === 'downloading' || this.status.state === 'ready') return Promise.resolve(this.status)
+    this.inFlight ??= this.doCheck().finally(() => (this.inFlight = null))
+    return this.inFlight
+  }
+
+  private async doCheck(): Promise<UpdateStatus> {
+    const previous = this.status
     const current = this.deps.currentVersion
     this.set({ state: 'checking', current })
     try {
@@ -92,7 +103,8 @@ export class UpdateService {
       if (!res.ok) throw new UpdateError(`GitHub answered HTTP ${res.status}.`)
       const rel = (await res.json()) as GithubRelease
       const version = rel.tag_name.replace(/^v/, '')
-      if (rel.draft || rel.prerelease || !isNewer(version, current)) {
+      // Only plain x.y.z: the version ends up in file paths and asset names.
+      if (rel.draft || rel.prerelease || !/^\d+\.\d+\.\d+$/.test(version) || !isNewer(version, current)) {
         return this.set({ state: 'idle', current, checkedAt: new Date().toISOString() })
       }
       const release: UpdateRelease = { version, url: rel.html_url || RELEASES_PAGE, notes: (rel.body ?? '').slice(0, 4000), publishedAt: rel.published_at }
@@ -100,6 +112,7 @@ export class UpdateService {
       const blocker = await this.installBlocker()
       return this.set({ state: 'available', current, release, canInstall: !blocker, ...(blocker ? { reason: blocker } : {}) })
     } catch (err) {
+      if (previous.state === 'available') return this.set(previous)
       return this.set({ state: 'error', current, message: `Couldn't check for updates: ${err instanceof Error ? err.message : String(err)}` })
     }
   }
@@ -127,7 +140,8 @@ export class UpdateService {
   }
 
   /**
-   * Starts the post-exit swap if an update is staged. Call from `before-quit`. After
+   * Starts the post-exit swap if an update is staged (once). Call from `will-quit`, which a
+   * window can't cancel, so the app really is exiting. After
    * "Restart now" the new version relaunches; otherwise it is simply there next launch.
    */
   installOnQuit(): boolean {

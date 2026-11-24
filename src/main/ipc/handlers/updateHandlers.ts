@@ -9,7 +9,7 @@ export function registerUpdateHandlers(): void {
   registerHandler('update:check', () => s.updates.check())
   registerHandler('update:download', () => s.updates.download())
   registerHandler('update:restart', () => {
-    // before-quit runs installOnQuit(), which starts the swap and relaunch.
+    // will-quit runs installOnQuit(), which starts the swap and relaunch.
     if (s.updates.requestRestart()) setImmediate(() => app.quit())
   })
 }

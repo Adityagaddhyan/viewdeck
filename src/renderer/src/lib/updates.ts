@@ -10,6 +10,7 @@ export async function checkForUpdatesNow(): Promise<void> {
     const status = await call('update:check')
     if (status.state === 'idle') actions.showToast(`You're on the latest version (ViewDeck ${status.current}).`)
     else if (status.state === 'error') actions.showToast(status.message)
+    else if (status.state === 'ready') actions.showToast(`ViewDeck ${status.release.version} is ready. Restart to finish updating.`)
   } catch (err) {
     actions.showToast(`Couldn't check for updates: ${(err as Error).message}`)
   }

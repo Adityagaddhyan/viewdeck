@@ -113,11 +113,9 @@ export function UpdateBanner() {
               </>
             )}
           </div>
-          {status.state !== 'downloading' && (
-            <button onClick={() => setHidden(true)} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
-              <X className="size-3.5" />
-            </button>
-          )}
+          <button onClick={() => setHidden(true)} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss" title={status.state === 'downloading' ? 'Hide (the download continues)' : 'Dismiss'}>
+            <X className="size-3.5" />
+          </button>
         </div>
       </div>
       <ConfirmDialog request={confirm} onClose={() => setConfirm(null)} />

@@ -110,11 +110,11 @@ app.on('before-quit', () => {
   const s = getServices()
   void s.sessions.disconnectAll()
   void s.tunnels.closeAll()
-  s.updates.installOnQuit() // a staged update is swapped in once we've exited
 })
 app.on('will-quit', () => {
   if (!servicesStarted()) return
   const s = getServices()
+  s.updates.installOnQuit() // a staged update is swapped in once we've exited
   s.processes.killAllSync()
   s.store.close()
 })

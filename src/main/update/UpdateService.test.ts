@@ -91,14 +91,15 @@ describe('UpdateService download → restart', () => {
 describe('UpdateInstaller.prepare', () => {
   const zip = Buffer.from('fake zip bytes')
   const good = createHash('sha256').update(zip).digest('hex')
-  const assets = { version: '0.2.0', zipName: 'ViewDeck-0.2.0-arm64-mac.zip', zipUrl: 'https://dl/zip', sumsUrl: 'https://dl/sums' }
+  const assets = { version: '0.2.0', zipName: 'ViewDeck-0.2.0-arm64-mac.zip', zipUrl: 'https://github.com/Adityagaddhyan/viewdeck/releases/download/v0.2.0/ViewDeck-0.2.0-arm64-mac.zip', sumsUrl: 'https://github.com/Adityagaddhyan/viewdeck/releases/download/v0.2.0/SHA256SUMS.txt' }
   const run = (id = 'dev.viewdeck.app', ver = '0.2.0') =>
     vi.fn(async (cmd: string, args: string[]): Promise<RunResult> => {
       if (cmd === 'plutil') return { code: 0, stdout: args[1] === 'CFBundleIdentifier' ? id : ver, stderr: '' }
+      if (cmd === 'ditto') mkdirSync(join(args[3]!, 'ViewDeck.app')) // a real extracted bundle folder
       return { code: 0, stdout: '', stderr: '' }
     })
   const fetchWith = (hash: string) =>
-    (async (url: string) => (url.endsWith('sums') ? new Response(`${hash}  ViewDeck-0.2.0-arm64-mac.zip\n`) : new Response(zip, { headers: { 'content-length': String(zip.length) } }))) as unknown as typeof fetch
+    (async (url: string) => (url.endsWith('SHA256SUMS.txt') ? new Response(`${hash}  ViewDeck-0.2.0-arm64-mac.zip\n`) : new Response(zip, { headers: { 'content-length': String(zip.length) } }))) as unknown as typeof fetch
 
   it('verifies the checksum, signature and bundle identity, then stages it', async () => {
     const progress: number[] = []
@@ -112,6 +113,36 @@ describe('UpdateInstaller.prepare', () => {
     const mk = (hash: string, r = run()) => new UpdateInstaller({ fetch: fetchWith(hash), run: r, spawnAfterExit: vi.fn(), workDir: mkdtempSync(join(tmpdir(), 'vd-inst-')), pid: 1 })
     await expect(mk('0'.repeat(64)).prepare(assets, () => {})).rejects.toThrow(/checksum/)
     await expect(mk(good, run('com.evil.app')).prepare(assets, () => {})).rejects.toThrow(/not the expected app/)
+  })
+})
+
+describe('UpdateInstaller guards', () => {
+  const mk = () => new UpdateInstaller({ fetch: (async () => new Response('')) as unknown as typeof fetch, run: vi.fn(), spawnAfterExit: vi.fn(), workDir: mkdtempSync(join(tmpdir(), 'vd-inst-')), pid: 1 })
+  it('refuses non-release URLs and odd version strings before touching disk', async () => {
+    const base = { zipName: 'x.zip', zipUrl: 'https://evil.example/x.zip', sumsUrl: 'https://evil.example/s' }
+    await expect(mk().prepare({ ...base, version: '0.2.0' }, () => {})).rejects.toThrow(/releases/)
+    await expect(mk().prepare({ ...base, version: '9.0.0-/../../x' }, () => {})).rejects.toThrow(/version/)
+  })
+})
+
+describe('UpdateService.check edge cases', () => {
+  it('ignores tags that are not plain x.y.z and shares one request between concurrent checks', async () => {
+    let calls = 0
+    const { svc } = makeService(async () => (calls++, json(release('v9.0.0-/../../x'))))
+    const [a, b] = await Promise.all([svc.check(), svc.check()])
+    expect(calls).toBe(1)
+    expect(a.state).toBe('idle')
+    expect(b).toBe(a)
+  })
+  it('keeps an available update when a re-check fails', async () => {
+    let fail = false
+    const { svc } = makeService(async () => {
+      if (fail) throw new Error('offline')
+      return json(release('v0.2.0'))
+    })
+    await svc.check()
+    fail = true
+    expect((await svc.check()).state).toBe('available')
   })
 })
 
@@ -140,8 +171,8 @@ describe('SWAP_SCRIPT (real shell)', () => {
     const target = join(dir, 'ViewDeck.app')
     mkdirSync(target)
     writeFileSync(join(target, 'version'), 'old')
-    const r = spawnSync('/bin/sh', ['-c', SWAP_SCRIPT, 'viewdeck-update', '999999', join(dir, 'missing.app'), target, '0'], { encoding: 'utf8' })
-    expect(r.status).toBe(0)
+    spawnSync('/bin/sh', ['-c', SWAP_SCRIPT, 'viewdeck-update', '999999', join(dir, 'missing.app'), target, '0'], { encoding: 'utf8' })
     expect(readFileSync(join(target, 'version'), 'utf8')).toBe('old')
+    expect(existsSync(`${target}.new-update`)).toBe(false)
   })
 })

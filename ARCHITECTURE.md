@@ -94,7 +94,7 @@ sequenceDiagram
 | `update:getStatus` | – | `UpdateStatus` | `updateHandlers.ts` → `UpdateService.current` |
 | `update:check` | – | `UpdateStatus` | `UpdateService.check()`: GitHub Releases latest vs `app.getVersion()` |
 | `update:download` | – | `UpdateStatus` | `UpdateService.download()` → `UpdateInstaller.prepare()` (download, SHA-256, `ditto`, `codesign`, bundle id/version) |
-| `update:restart` | – | – | `UpdateService.requestRestart()` then `app.quit()`; `before-quit` starts the swap + relaunch |
+| `update:restart` | – | – | `UpdateService.requestRestart()` then `app.quit()`; `will-quit` starts the swap + relaunch |
 | `aws:listProfiles` | `void` | `AwsProfile[]` | `awsHandlers.ts` → AwsProfileService |
 | `aws:getSsoStatus` | `{ profile }` | `SsoStatus` | `awsHandlers.ts` → AwsProfileService |
 | `aws:ssoLogin` | `{ profile }` | `SsoStatus` (after CLI exits) | `awsHandlers.ts` → AwsProfileService |
@@ -407,9 +407,13 @@ flowchart TD
   the arch's `ViewDeck-<v>-<arch>-mac.zip` while hashing it, checks it against the release's
   `SHA256SUMS.txt`, extracts it with `ditto`, and verifies it with `codesign --verify --deep
   --strict` and the Info.plist bundle id and version. It stages the result under
-  `<userData>/updates`. **Restart now** (or any normal quit) runs `SWAP_SCRIPT` through
-  `ChildProcessRegistry.spawnDetachedAfterExit`, the one process allowed to outlive the app.
-  It waits for our PID, swaps the bundle (restoring the old one on failure) and relaunches.
+  `<userData>/updates`. It also checks that the archive holds exactly one real `ViewDeck.app`,
+  that the URLs are this repo's release downloads, that the version is plain `x.y.z`, and it
+  aborts a download after 60 s with no data. **Restart now** (or any normal quit) runs
+  `SWAP_SCRIPT` at `will-quit` through `ChildProcessRegistry.spawnDetachedAfterExit`, the one
+  process allowed to outlive the app. The script waits for our PID, and skips the swap if the
+  app is still running. It copies the new bundle next to the old one, does two same-folder
+  renames (restoring the old bundle on failure) and relaunches.
   Squirrel/electron-updater isn't used because it requires a Developer ID signature. When
   the app can't replace itself (dev build, running from the DMG or a translocated or
   read-only location), the card links to the release page instead.
