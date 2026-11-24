@@ -7,7 +7,11 @@
 ### The free, keyboard-first database GUI for PostgreSQL, Amazon RDS & Aurora
 
 Query, explore and safely edit your data. Connect to private cloud databases in seconds,
-with no bastion host, no SSH keys and no stored passwords.
+with no bastion host, no SSH keys and no stored passwords. **Free forever.**
+
+<a href="https://github.com/sponsors/Adityagaddhyan"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-db61a2?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor ViewDeck on GitHub Sponsors" height="32" /></a>
+&nbsp;
+<a href="https://buymeacoffee.com/adityagaddhyan"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="32" /></a>
 
 [![CI](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Adityagaddhyan/viewdeck/actions/workflows/codeql.yml)
@@ -17,10 +21,8 @@ with no bastion host, no SSH keys and no stored passwords.
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white)](#-supported-databases)
 [![AWS RDS](https://img.shields.io/badge/AWS%20RDS%20%C2%B7%20Aurora%20%C2%B7%20SSO-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white)](#-features)
 [![GitHub stars](https://img.shields.io/github/stars/Adityagaddhyan/viewdeck?style=flat-square&logo=github)](https://github.com/Adityagaddhyan/viewdeck/stargazers)
-[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?style=flat-square&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Adityagaddhyan)
-[![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/adityagaddhyan)
 
-**[Features](#-features)** · **[Why ViewDeck](#-why-viewdeck)** · **[Install](#-install)** · **[FAQ](#-faq)** · **[Contributing](CONTRIBUTING.md)** · **[Support](#-support-the-project)**
+**[Install](#-install)** · **[Quick start](#-quick-start)** · **[Features](#-features)** · **[Why ViewDeck](#-why-viewdeck)** · **[FAQ](#-faq)** · **[Support](#-support-the-project)** · **[Contribute](#-contributing-and-development)**
 
 <br />
 
@@ -31,6 +33,83 @@ with no bastion host, no SSH keys and no stored passwords.
 </div>
 
 <br />
+
+## 📦 Install
+
+**You'll need:** macOS (Apple Silicon or Intel) and [Node.js](https://nodejs.org) 22.13 or newer.
+For AWS databases, also the AWS CLI v2, plus the Session Manager plugin for private databases:
+
+```sh
+brew install node awscli && brew install --cask session-manager-plugin
+```
+
+There are no prebuilt downloads yet, so build the app once from source (about 2 minutes):
+
+```sh
+git clone https://github.com/Adityagaddhyan/viewdeck.git
+cd viewdeck
+npm install
+npm run dist:dir
+cp -R release/mac*/ViewDeck.app /Applications/
+```
+
+Open **ViewDeck** from Applications or Spotlight. Builds aren't notarised yet, so the
+first time, right-click **ViewDeck.app → Open** and confirm. To update later, run
+`git pull` and repeat the last two commands.
+
+## 🚀 Quick start
+
+**1. Connect to a database**
+
+- **On AWS:** click **New AWS connection**, pick a profile from `~/.aws` (use **Sign in
+  with AWS SSO** if asked), then pick your RDS instance or Aurora cluster from the list.
+  Choose how to reach it:
+  - **Direct** if you're on a VPN that reaches the VPC, or the database is public.
+  - **SSM tunnel** for a private database. Pick an SSM-managed EC2 instance in the same VPC,
+    and ViewDeck runs the tunnel for you.
+
+  Then choose **IAM** or **password** auth and click **Connect**.
+- **Any other Postgres** (local, Docker, other clouds): click **Manual**, enter host,
+  port, database, user and password, then **Test** and **Save & connect**.
+
+Connections are saved (passwords encrypted in your OS keychain), so next time it's one
+click. Names containing `prod` or `staging` get a coloured frame and start read-only.
+
+**2. Explore**
+
+- Click a table in the sidebar to browse it, with paging, sorting and a `WHERE` filter
+  bar (`⌘F`).
+- Press `⌘K` to jump to any table, schema, recent query or connection.
+- Double-click a JSON cell for a tree view. Click the ↗ on a foreign-key value to open the
+  row it points to.
+
+**3. Query**
+
+- `⌘T` opens a query tab. Write SQL with autocomplete, then:
+  - `⌘↵` runs the statement under the cursor.
+  - **Run** runs every statement. The **All** tab shows each result, and **Copy all**
+    copies them in one go.
+- Above any result, type a condition like `status = 'paid' and amount > 100` to filter
+  rows live, and press `⌘F` to find text.
+- `⌘E` shows the query plan.
+
+**4. Edit safely**
+
+- Unlock the session with the **Read-only** toggle in the header (anything outside dev
+  asks you to confirm).
+- Double-click a cell to edit it, then press `⌘S` to review the exact SQL and **Commit**.
+  Nothing is written before that.
+
+## ☕ Support the project
+
+ViewDeck will always be free. If it saves you time, you can support its development. It
+helps keep new engines and features coming.
+
+<a href="https://github.com/sponsors/Adityagaddhyan"><img src="https://img.shields.io/badge/Sponsor_on_GitHub-%E2%9D%A4-db61a2?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor ViewDeck on GitHub Sponsors" height="36" /></a>
+&nbsp;
+<a href="https://buymeacoffee.com/adityagaddhyan"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36" /></a>
+
+Starring the repo and telling a colleague helps too.
 
 ## 💡 Why ViewDeck
 
@@ -102,17 +181,6 @@ ViewDeck is **completely free**: MIT licensed, with no "pro" tier, no license ke
 sign-up and no usage tracking. The only network traffic goes to your own databases and to
 AWS. Use it at work or at home, fork it, or add your own database driver.
 
-## ☕ Support the project
-
-ViewDeck will always be free. If it saves you time, you can support its development. It
-helps keep new engines and features coming.
-
-<a href="https://github.com/sponsors/Adityagaddhyan"><img src="https://img.shields.io/badge/Sponsor_on_GitHub-%E2%9D%A4-db61a2?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor ViewDeck on GitHub Sponsors" height="36" /></a>
-&nbsp;
-<a href="https://buymeacoffee.com/adityagaddhyan"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36" /></a>
-
-Starring the repo and telling a colleague helps too.
-
 ## 💾 Supported databases
 
 | Engine | Status |
@@ -125,27 +193,6 @@ Starring the repo and telling a colleague helps too.
 
 ViewDeck is engine-agnostic by design: the UI talks to a small `DatabaseDriver` contract,
 so new databases plug in without changes to the app.
-
-## 📦 Install
-
-There are no prebuilt releases yet, so build from source (macOS, Apple Silicon or Intel):
-
-```sh
-git clone https://github.com/Adityagaddhyan/viewdeck.git
-cd viewdeck
-npm install
-npm run dist:dir
-cp -R release/mac*/ViewDeck.app /Applications/
-```
-
-Builds aren't notarised yet, so on first launch right-click **ViewDeck.app → Open**.
-
-**Requirements:** Node ≥ 22.13. For AWS features, the AWS CLI v2 and (for private
-databases) the Session Manager plugin:
-
-```sh
-brew install awscli && brew install --cask session-manager-plugin
-```
 
 ## ❓ FAQ
 
@@ -206,7 +253,7 @@ transaction after you review the exact SQL. Destructive statements ask for confi
 privileged action goes through one typed, validated IPC boundary.
 </details>
 
-## 🧑‍💻 Develop
+## 🤝 Contributing and development
 
 ```sh
 npm install
