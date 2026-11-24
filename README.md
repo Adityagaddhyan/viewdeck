@@ -17,8 +17,10 @@ with no bastion host, no SSH keys and no stored passwords.
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white)](#-supported-databases)
 [![AWS RDS](https://img.shields.io/badge/AWS%20RDS%20%C2%B7%20Aurora%20%C2%B7%20SSO-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white)](#-features)
 [![GitHub stars](https://img.shields.io/github/stars/Adityagaddhyan/viewdeck?style=flat-square&logo=github)](https://github.com/Adityagaddhyan/viewdeck/stargazers)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?style=flat-square&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Adityagaddhyan)
+[![Buy me a coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-FFDD00?style=flat-square&logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/adityagaddhyan)
 
-**[Features](#-features)** · **[Why ViewDeck](#-why-viewdeck)** · **[Install](#-install)** · **[FAQ](#-faq)** · **[Contributing](CONTRIBUTING.md)**
+**[Features](#-features)** · **[Why ViewDeck](#-why-viewdeck)** · **[Install](#-install)** · **[FAQ](#-faq)** · **[Contributing](CONTRIBUTING.md)** · **[Support](#-support-the-project)**
 
 <br />
 
@@ -99,6 +101,17 @@ ViewDeck takes care of all of it.
 ViewDeck is **completely free**: MIT licensed, with no "pro" tier, no license key, no
 sign-up and no usage tracking. The only network traffic goes to your own databases and to
 AWS. Use it at work or at home, fork it, or add your own database driver.
+
+## ☕ Support the project
+
+ViewDeck will always be free. If it saves you time, you can support its development. It
+helps keep new engines and features coming.
+
+<a href="https://github.com/sponsors/Adityagaddhyan"><img src="https://img.shields.io/badge/Sponsor_on_GitHub-%E2%9D%A4-db61a2?style=for-the-badge&logo=githubsponsors&logoColor=white" alt="Sponsor ViewDeck on GitHub Sponsors" height="36" /></a>
+&nbsp;
+<a href="https://buymeacoffee.com/adityagaddhyan"><img src="https://img.shields.io/badge/Buy_me_a_coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" height="36" /></a>
+
+Starring the repo and telling a colleague helps too.
 
 ## 💾 Supported databases
 
@@ -213,7 +226,7 @@ Security issues: [SECURITY.md](SECURITY.md).
 
 <div align="center">
 
-**If ViewDeck saves you time, a ⭐ helps other developers find it.**
+**If ViewDeck saves you time, a ⭐ helps other developers find it.** You can also [sponsor](https://github.com/sponsors/Adityagaddhyan) or [buy me a coffee](https://buymeacoffee.com/adityagaddhyan) ☕
 
 <sub>MIT licensed · Built with Electron, React, TypeScript and Monaco</sub>
 
