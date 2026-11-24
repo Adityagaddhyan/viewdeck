@@ -19,29 +19,43 @@
   `Contents/Resources/`. `src/main/resources.ts` reads them from `process.resourcesPath` when
   `app.isPackaged`. TLS over SSM tunnels needs the CA bundle (invariant 8).
 
-## Signing and notarisation (needs your Apple Developer account)
+## Signing
 
-Without a certificate the app is **ad-hoc signed**. It runs on the machine that built it. On
-other Macs, Gatekeeper blocks the first launch: right-click the app, choose Open, and confirm.
+Builds are **ad-hoc signed** (`mac.identity: '-'` in `electron-builder.yml`), and both
+architectures pass `codesign --verify --deep --strict`. A valid ad-hoc signature matters: a
+downloaded app with no signature, or a broken one, gets macOS's misleading "ViewDeck is
+damaged" error. With ad-hoc signing users get the normal "can't verify the developer" prompt
+and approve it once in **System Settings → Privacy & Security → Open Anyway**. Hardened
+runtime is off, because with an ad-hoc identity it can break library validation at launch.
 
-To ship it to other people:
+To remove the prompt entirely (needs an Apple Developer account):
 
-1. Install a **Developer ID Application** certificate in your login keychain, or set `CSC_LINK` and
-   `CSC_KEY_PASSWORD`. electron-builder picks it up automatically, and `hardenedRuntime: true` is
-   already set.
-2. Set `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`, then change `mac.notarize` to
-   `true` in `electron-builder.yml`.
-3. Run `npm run dist`, then check the result with `spctl -a -vv release/mac-arm64/ViewDeck.app`.
+1. Install a **Developer ID Application** certificate in the keychain (or set `CSC_LINK` and
+   `CSC_KEY_PASSWORD`; in CI, as repository secrets).
+2. In `electron-builder.yml`, remove `identity: '-'` and set `hardenedRuntime: true` and
+   `notarize: true`. Set `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD` and `APPLE_TEAM_ID`.
+3. Check with `spctl -a -vv release/mac-arm64/ViewDeck.app`.
 
-## Auto-update (not enabled)
+## Releasing
 
-`publish: null` is deliberate: nothing is uploaded until releases are set up (e.g. GitHub Releases). Two
-things are needed before auto-update can work:
+`.github/workflows/release.yml` runs on a `v*.*.*` tag:
 
-- **A signed build**, because Squirrel.Mac refuses unsigned updates.
-- **A feed URL** that you host, for example an S3 bucket or an internal server
-  (`publish: { provider: generic, url: … }`). Then add `electron-updater` and call
-  `autoUpdater.checkForUpdatesAndNotify()` from `src/main/index.ts` after `app.whenReady()`.
+```sh
+npm version 0.2.0 --no-git-tag-version && git commit -am "chore: release 0.2.0"
+git tag v0.2.0 && git push origin main v0.2.0
+```
 
-Until then, update by installing a newer `.dmg`. Saved connections live in
-`~/Library/Application Support/ViewDeck` and survive the reinstall.
+It checks that the tag matches `package.json` and runs `npm run verify`. It then builds the
+`.dmg` and `.zip` for arm64 and x64, verifies the signatures and publishes a GitHub Release
+with the files and `SHA256SUMS.txt`. Then update the Homebrew cask:
+`node scripts/bump-cask.mjs 0.2.0 ../homebrew-viewdeck`, commit and push in the tap repo.
+
+## In-app updates
+
+ViewDeck updates itself from GitHub Releases (`src/main/update/`, see ARCHITECTURE.md
+"Updates"). It downloads the arch's `.zip`, verifies it against `SHA256SUMS.txt` and its code
+signature, and swaps the bundle after quit. That needs no Developer ID, unlike
+Squirrel/electron-updater. Release assets must keep the names electron-builder produces
+(`ViewDeck-<v>-<arch>-mac.zip`) and the checksum file, or one-click updates fall back to the
+download link. Saved connections live in `~/Library/Application Support/ViewDeck` and
+survive updates.

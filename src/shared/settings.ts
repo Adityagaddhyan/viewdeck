@@ -19,6 +19,8 @@ export interface AppSettings {
   readOnlyDefaults: Record<EnvironmentTier, boolean>
   /** Default statement timeout (ms, 0 = off) per environment tier. */
   timeoutDefaults: Record<EnvironmentTier, number>
+  /** Check GitHub Releases for a new version at launch and every 12 hours. */
+  checkForUpdates: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -27,7 +29,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'dark',
   dateDisplay: 'local',
   readOnlyDefaults: Object.fromEntries(TIERS.map((t) => [t, defaultReadOnly(t)])) as Record<EnvironmentTier, boolean>,
-  timeoutDefaults: Object.fromEntries(TIERS.map((t) => [t, defaultStatementTimeoutMs(t)])) as Record<EnvironmentTier, number>
+  timeoutDefaults: Object.fromEntries(TIERS.map((t) => [t, defaultStatementTimeoutMs(t)])) as Record<EnvironmentTier, number>,
+  checkForUpdates: true
 }
 
 export function normalizeSettings(raw: unknown): AppSettings {
@@ -46,6 +49,7 @@ export function normalizeSettings(raw: unknown): AppSettings {
         const v = Number(to[t])
         return [t, Number.isFinite(v) && v >= 0 ? Math.min(24 * 3_600_000, Math.floor(v)) : DEFAULT_SETTINGS.timeoutDefaults[t]]
       })
-    ) as Record<EnvironmentTier, number>
+    ) as Record<EnvironmentTier, number>,
+    checkForUpdates: r.checkForUpdates !== false
   }
 }

@@ -10,6 +10,7 @@ import { actions, getState, setState } from '@renderer/lib/store'
 import { schemaCache } from '../editor/schemaCache'
 import { connectTo } from '@renderer/lib/sessions'
 import { setTheme } from '@renderer/lib/theme'
+import { checkForUpdatesNow } from '@renderer/lib/updates'
 
 export type PaletteGroup = 'Actions' | 'Tables' | 'Schemas' | 'Starred' | 'Recent queries' | 'Connections'
 
@@ -70,6 +71,7 @@ export async function buildPaletteItems(mod: string): Promise<PaletteItem[]> {
       }
     })
   }
+  items.push({ id: 'a:updates', group: 'Actions', label: 'Check for updates', searchText: 'check for updates upgrade new version release', run: () => void checkForUpdatesNow() })
   const theme = getState().settings.theme
   for (const [mode, label] of [['light', 'Light'], ['dark', 'Dark'], ['system', 'System (follow macOS)']] as const) {
     if (mode !== theme) items.push({ id: `a:theme-${mode}`, group: 'Actions', label: `Theme: ${label}`, searchText: `theme appearance mode ${label}`, run: () => void setTheme(mode) })

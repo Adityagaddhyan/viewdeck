@@ -12,6 +12,7 @@
  * Adding a channel: add it to `IpcContract`, register a handler in
  * `src/main/ipc/handlers/`, and record it in ARCHITECTURE.md § IPC channels.
  */
+import type { UpdateStatus } from './update'
 import type { IpcResult } from './types/result'
 import type { AppSettings } from './settings'
 import type {
@@ -72,6 +73,15 @@ export interface IpcContract {
   'app:closeWindow': { request: void; response: void }
   /** Native "Save as…" for exports. Resolves the saved path, or null if cancelled. */
   'app:saveFile': { request: { defaultName: string; content: string }; response: { path: string | null } }
+
+  /** Current update status (see UpdateStatus in src/shared/update.ts). */
+  'update:getStatus': { request: void; response: UpdateStatus }
+  /** Checks GitHub Releases now (menu "Check for Updates…"). Resolves with the new status. */
+  'update:check': { request: void; response: UpdateStatus }
+  /** Downloads, verifies and stages the available update. Progress arrives as `update:status`. */
+  'update:download': { request: void; response: UpdateStatus }
+  /** Quits, installs the staged update and relaunches the new version. */
+  'update:restart': { request: void; response: void }
 
   /** Profiles parsed from ~/.aws/config and ~/.aws/credentials. No network. */
   'aws:listProfiles': { request: void; response: AwsProfile[] }
@@ -178,6 +188,10 @@ export const IPC_CHANNELS = [
   'app:writeClipboard',
   'app:saveFile',
   'app:closeWindow',
+  'update:getStatus',
+  'update:check',
+  'update:download',
+  'update:restart',
   'aws:listProfiles',
   'aws:getSsoStatus',
   'aws:ssoLogin',
@@ -243,6 +257,8 @@ export interface IpcEvents {
   'session:lost': { sessionId: string; reason: string }
   /** A native menu item was clicked. The renderer performs the action. */
   'menu:command': { command: MenuCommand }
+  /** Update lifecycle changed (checking, available, download progress, ready, error). */
+  'update:status': UpdateStatus
 }
 
 /** Commands sent by the native menu (src/main/menu.ts) to the renderer. */
@@ -259,10 +275,11 @@ export type MenuCommand =
   | 'palette'
   | 'nextTab'
   | 'prevTab'
+  | 'checkForUpdates'
 
 export type IpcEventName = keyof IpcEvents
 
-export const IPC_EVENTS = ['tunnel:status', 'session:lost', 'menu:command'] as const satisfies readonly IpcEventName[]
+export const IPC_EVENTS = ['tunnel:status', 'session:lost', 'menu:command', 'update:status'] as const satisfies readonly IpcEventName[]
 
 type _AssertAllEventsListed =
   Exclude<IpcEventName, (typeof IPC_EVENTS)[number]> extends never ? true : never

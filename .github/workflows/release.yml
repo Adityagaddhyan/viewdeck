@@ -1,0 +1,80 @@
+# Release: pushing a tag like v0.2.0 builds the macOS app (Apple Silicon + Intel, .dmg and
+# .zip, ad-hoc signed) and publishes a GitHub Release with the files and their SHA-256
+# checksums (the Homebrew cask uses the .zip checksums).
+#
+#   npm version 0.2.0 --no-git-tag-version && git commit -am "chore: release 0.2.0"
+#   git tag v0.2.0 && git push origin main v0.2.0
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: Build and publish macOS release
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      contents: write # create the release and upload assets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check the tag matches package.json
+        run: |
+          v="$(node -p "require('./package.json').version")"
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME does not match package.json version $v"; exit 1; }
+      - run: npm ci
+      - run: npm run verify
+      - name: Build .dmg and .zip (arm64 + x64)
+        run: npm run dist
+      - name: Verify signatures
+        run: |
+          for app in release/mac-arm64/ViewDeck.app release/mac/ViewDeck.app; do
+            codesign --verify --deep --strict "$app" && echo "ok $app"
+          done
+      - name: Checksums
+        run: |
+          cd release
+          shasum -a 256 ViewDeck-*.dmg ViewDeck-*.zip | tee SHA256SUMS.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "## Install"
+            echo
+            echo '**Homebrew** (installs the AWS CLI and Session Manager plugin too):'
+            echo
+            echo '```sh'
+            echo 'brew install --cask adityagaddhyan/viewdeck/viewdeck'
+            echo '```'
+            echo
+            echo '**Download:** `ViewDeck-*-arm64.dmg` for Apple Silicon, `ViewDeck-*-x64.dmg` for Intel. Open it and drag ViewDeck to Applications.'
+            echo
+            echo 'Builds are not notarised yet. On first launch macOS says it cannot verify the developer: open **System Settings → Privacy & Security** and click **Open Anyway** (once).'
+            echo
+            echo '## Checksums (SHA-256)'
+            echo
+            echo '```'
+            cat release/SHA256SUMS.txt
+            echo '```'
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "ViewDeck ${GITHUB_REF_NAME#v}" \
+            --notes-file notes.md \
+            --generate-notes \
+            release/ViewDeck-*.dmg release/ViewDeck-*.zip release/SHA256SUMS.txt

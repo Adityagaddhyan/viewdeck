@@ -36,14 +36,30 @@ with no bastion host, no SSH keys and no stored passwords. **Free forever.**
 
 ## 📦 Install
 
-**You'll need:** macOS (Apple Silicon or Intel) and [Node.js](https://nodejs.org) 22.13 or newer.
-For AWS databases, also the AWS CLI v2, plus the Session Manager plugin for private databases:
+**Homebrew** (recommended). This also installs the AWS CLI and the Session Manager plugin
+that the AWS features use:
 
 ```sh
-brew install node awscli && brew install --cask session-manager-plugin
+brew install --cask adityagaddhyan/viewdeck/viewdeck
 ```
 
-There are no prebuilt downloads yet, so build the app once from source (about 2 minutes):
+**Or download the app** from the [latest release](https://github.com/Adityagaddhyan/viewdeck/releases/latest):
+`ViewDeck-<version>-arm64.dmg` for Apple Silicon, `-x64.dmg` for Intel. Open it and drag
+ViewDeck to Applications. For AWS databases, also install
+`brew install awscli && brew install --cask session-manager-plugin`.
+
+> **First launch:** ViewDeck isn't notarised by Apple yet, so macOS says it can't verify the
+> developer. Open **System Settings → Privacy & Security**, scroll down and click
+> **Open Anyway** (only once).
+
+**Updates are built in.** ViewDeck tells you when a new version is out. Click **Update now**,
+then **Restart**, and you're on the latest version. Homebrew users can also run
+`brew upgrade --cask viewdeck`.
+
+<details>
+<summary><b>Build from source</b></summary>
+
+Needs [Node.js](https://nodejs.org) 22.13 or newer:
 
 ```sh
 git clone https://github.com/Adityagaddhyan/viewdeck.git
@@ -52,10 +68,7 @@ npm install
 npm run dist:dir
 cp -R release/mac*/ViewDeck.app /Applications/
 ```
-
-Open **ViewDeck** from Applications or Spotlight. Builds aren't notarised yet, so the
-first time, right-click **ViewDeck.app → Open** and confirm. To update later, run
-`git pull` and repeat the last two commands.
+</details>
 
 ## 🚀 Quick start
 
@@ -178,8 +191,9 @@ ViewDeck takes care of all of it.
 ## 🎁 Free and open source
 
 ViewDeck is **completely free**: MIT licensed, with no "pro" tier, no license key, no
-sign-up and no usage tracking. The only network traffic goes to your own databases and to
-AWS. Use it at work or at home, fork it, or add your own database driver.
+sign-up and no usage tracking. Network traffic goes to your own databases and to AWS, plus a
+small update check against GitHub Releases that sends nothing about you (you can turn it off
+in Settings). Use it at work or at home, fork it, or add your own database driver.
 
 ## 💾 Supported databases
 

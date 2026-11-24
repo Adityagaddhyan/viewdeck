@@ -8,7 +8,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
-import { app, safeStorage } from 'electron'
+import { app, net, safeStorage } from 'electron'
 import { broadcast } from './ipc/events'
 import { ChildProcessRegistry } from './process/ChildProcessRegistry'
 import { AwsClientFactory } from './aws/credentials'
@@ -22,6 +22,15 @@ import { SessionManager } from './db/SessionManager'
 import { LocalStore } from './store/LocalStore'
 import { rdsCaBundle } from './resources'
 import { normalizeSettings } from '@shared/settings'
+import { UpdateInstaller } from './update/UpdateInstaller'
+import { UpdateService } from './update/UpdateService'
+
+/** The running `.app` bundle (…/ViewDeck.app), or null in dev and off macOS. */
+function appBundlePath(): string | null {
+  if (!app.isPackaged || process.platform !== 'darwin') return null
+  const bundle = join(app.getPath('exe'), '..', '..', '..')
+  return bundle.endsWith('.app') ? bundle : null
+}
 
 /** In-memory secrets for db:testConnection with an unsaved password. Never persisted. */
 export class TransientSecrets {
@@ -51,6 +60,7 @@ export interface Services {
   transientSecrets: TransientSecrets
   drivers: DriverFactory
   sessions: SessionManager
+  updates: UpdateService
 }
 
 let services: Services | null = null
@@ -112,7 +122,23 @@ export function getServices(): Services {
     store,
     transientSecrets,
     drivers,
-    sessions
+    sessions,
+    updates: new UpdateService({
+      fetch: (input, init) => net.fetch(input as string, init),
+      installer: new UpdateInstaller({
+        fetch: (input, init) => net.fetch(input as string, init),
+        run: (cmd, args) => processes.run(cmd, args),
+        spawnAfterExit: (cmd, args) => processes.spawnDetachedAfterExit(cmd, args),
+        workDir: join(app.getPath('userData'), 'updates'),
+        pid: process.pid
+      }),
+      currentVersion: app.getVersion(),
+      arch: process.arch,
+      appBundle: appBundlePath(),
+      autoCheckEnabled: () => app.isPackaged && normalizeSettings(store.preferences.get('settings')).checkForUpdates,
+      onStatus: (status) => broadcast('update:status', status),
+      disableTimers: process.env['VIEWDECK_E2E'] === '1'
+    })
   }
   return services
 }

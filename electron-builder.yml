@@ -2,9 +2,13 @@
 #
 # - resources/ is copied as extraResources: main reads it from process.resourcesPath
 #   (src/main/resources.ts), e.g. the RDS CA bundle that TLS over SSM tunnels needs.
-# - Signing: with no Developer ID certificate in the keychain (or CSC_LINK), the app is
-#   ad-hoc signed and Gatekeeper warns on first open (right-click → Open). Notarisation
-#   runs only when APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID are set.
+# - Signing: ad-hoc (`identity: "-"`) until there is a Developer ID certificate. Ad-hoc
+#   gives a valid signature, so a downloaded build shows Gatekeeper's "unidentified
+#   developer" prompt (approve once in System Settings → Privacy & Security) instead of
+#   the misleading "app is damaged" error an unsigned or broken signature causes.
+#   Hardened runtime is off for ad-hoc builds (it needs a real identity; with ad-hoc it can
+#   break library validation at launch). With a Developer ID: drop `identity`, set
+#   hardenedRuntime: true and notarize: true (see docs/PACKAGING.md).
 # - No publish target yet (no releases are uploaded). Auto-update needs a
 #   signed build and a feed URL; see docs/PACKAGING.md.
 appId: dev.viewdeck.app
@@ -28,16 +32,20 @@ npmRebuild: false
 mac:
   target:
     - target: dmg
+      arch: [arm64, x64]
     - target: zip
+      arch: [arm64, x64]
   category: public.app-category.developer-tools
   icon: resources/icon.png
   artifactName: ${productName}-${version}-${arch}-mac.${ext}
-  hardenedRuntime: true
+  identity: '-'
+  hardenedRuntime: false
   notarize: false
   extendInfo:
     NSHumanReadableCopyright: Copyright © ViewDeck
 dmg:
   artifactName: ${productName}-${version}-${arch}.${ext}
+  title: ${productName} ${version}
 linux:
   target: AppImage
   category: Development

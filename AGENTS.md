@@ -58,6 +58,7 @@ src/
     ipc.ts                THE IPC contract: every channel, request and response type.
     environment.ts        prod/staging/dev classification + default read-only policy.
     settings.ts           AppSettings + normalizeSettings (pure). Per-tier read-only/timeout defaults live here.
+    update.ts             UpdateStatus + pure helpers (version compare, release asset names, SHA256SUMS parsing).
     types/result.ts       IpcResult<T> / AppError envelope (handlers never throw over IPC).
     types/driver.ts       DatabaseDriver contract + all DB DTOs (QueryResult, StagedChangeset...).
     types/aws.ts          AWS DTOs: AwsProfile, SsoStatus, RdsDatabase, TunnelTarget, TunnelInfo.
@@ -74,6 +75,9 @@ src/
     ipc/validate.ts       Runtime validation of renderer input (requireString / requirePort).
     ipc/validateDb.ts     Validation of connection settings, SQL params and staged changesets.
     nativeTheme.ts        nativeTheme.themeSource + window background follow the theme setting.
+    update/UpdateService.ts   GitHub Releases check, update lifecycle (UpdateStatus), 12 h schedule.
+    update/UpdateInstaller.ts Download + SHA-256 + ditto + codesign verify; post-exit bundle swap script.
+    ipc/handlers/updateHandlers.ts  update:getStatus / check / download / restart.
     resources.ts          Bundled resource paths (dev vs packaged) + cached RDS CA bundle.
     process/ChildProcessRegistry.ts  Spawns + tracks every child; kills whole process groups.
     aws/AwsProfileService.ts   ~/.aws profile discovery + `aws sso login` orchestration.
@@ -126,6 +130,8 @@ src/
     src/lib/hotkeys.ts    useHotkey('mod+s', …): Cmd on macOS, Ctrl elsewhere.
     src/lib/theme.ts      useApplyTheme (html.dark ⇄ settings/system, live OS changes), useMonacoTheme, setTheme.
     src/features/settings/ SettingsDialog (⌘,), ThemeMenu (header Light / Dark / System picker).
+    src/features/update/  UpdateBanner (bottom-right card: Update now → progress → Restart now / Later).
+    src/lib/updates.ts    checkForUpdatesNow() for the menu item and ⌘K ("You're on the latest version").
     src/components/ui/    shadcn/ui primitives (button, primitives, dialog/sheet). Owned by us; edit freely.
     src/components/       ErrorBanner (renders AppError steps/command/docs + inline SSO sign-in & retry),
                           ErrorBoundary (render-crash fallback), EnvironmentBar, Toaster.
@@ -206,7 +212,9 @@ Path aliases: `@shared/*` → `src/shared/*` (all bundles), `@renderer/*` →
    `127.0.0.1` (SSM tunnel), set `ssl.servername` to the RDS endpoint and `ssl.ca` to
    the bundled RDS CA. Never "fix" a TLS error with `rejectUnauthorized: false`.
 9. **Every spawned child process is tracked** (SSM tunnels, `aws sso login`) and killed
-   on disconnect, crash, and `before-quit` / `will-quit`. No orphans.
+   on disconnect, crash, and `before-quit` / `will-quit`. No orphans. The single exception is
+   the update swap script (`ChildProcessRegistry.spawnDetachedAfterExit`), which must run
+   after the app exits. Never use that method for anything else.
 10. **Writes are staged, previewed, and transactional.** The grid never writes on cell
     edit. `Cmd/Ctrl+S` shows the exact parameterised SQL in `BEGIN … COMMIT`, and
     commit is all-or-nothing. User values are **always** bound parameters, and

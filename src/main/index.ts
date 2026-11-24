@@ -87,6 +87,7 @@ void app.whenReady().then(() => {
   registerAllIpcHandlers()
   applyNativeTheme(normalizeSettings(getServices().store.preferences.get('settings')).theme)
   createMainWindow()
+  getServices().updates.start()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
@@ -109,6 +110,7 @@ app.on('before-quit', () => {
   const s = getServices()
   void s.sessions.disconnectAll()
   void s.tunnels.closeAll()
+  s.updates.installOnQuit() // a staged update is swapped in once we've exited
 })
 app.on('will-quit', () => {
   if (!servicesStarted()) return

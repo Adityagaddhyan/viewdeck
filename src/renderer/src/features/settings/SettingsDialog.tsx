@@ -1,5 +1,5 @@
 /**
- * Settings (⌘, / menu): page size, editor font size, theme, date display, and
+ * Settings (⌘, / menu): page size, editor font size, theme, date display, update checks, and
  * per-environment defaults for new sessions (start read-only, statement
  * timeout). Saved through settings:set (normalised in main).
  */
@@ -73,6 +73,11 @@ export function SettingsDialog() {
             </Select>
           </Field>
         </div>
+        <label className="mt-3 flex items-center gap-2 text-xs">
+          <input type="checkbox" aria-label="Check for updates" checked={d.checkForUpdates} onChange={(e) => set({ checkForUpdates: e.target.checked })} />
+          Check for updates automatically
+          <span className="text-muted-foreground">(asks GitHub at launch and every 12 hours; nothing about you is sent)</span>
+        </label>
 
         <h3 className="mb-1.5 mt-4 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">New session defaults per environment</h3>
         <div className="space-y-1.5">

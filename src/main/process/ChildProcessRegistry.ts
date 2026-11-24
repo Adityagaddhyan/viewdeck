@@ -41,6 +41,31 @@ export class ChildProcessRegistry {
   }
 
   /**
+   * The ONE exception to "no child outlives the app" (AGENTS.md invariant 9): the update
+   * installer's swap script, which must run after ViewDeck exits to replace the app bundle.
+   * It is deliberately untracked (so quit cleanup doesn't kill it), detached, with no stdio.
+   * Never use this for anything else.
+   */
+  spawnDetachedAfterExit(command: string, args: readonly string[]): void {
+    const child = this.spawnFn(command, args, { detached: true, stdio: 'ignore', windowsHide: true })
+    child.on('error', () => {})
+    child.unref()
+  }
+
+  /** Runs a short-lived tracked command and collects its output (never rejects). */
+  run(command: string, args: readonly string[]): Promise<{ code: number | null; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+      const child = this.spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+      let stdout = ''
+      let stderr = ''
+      child.stdout?.on('data', (d: Buffer) => (stdout += d.toString()))
+      child.stderr?.on('data', (d: Buffer) => (stderr += d.toString()))
+      child.once('error', (e) => resolve({ code: -1, stdout, stderr: stderr + e.message }))
+      child.once('close', (code) => resolve({ code, stdout, stderr }))
+    })
+  }
+
+  /**
    * Terminates a child and its descendants. Sends SIGTERM first and escalates to
    * SIGKILL if the child is still alive after the grace period. Resolves on exit.
    */

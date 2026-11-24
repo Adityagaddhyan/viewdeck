@@ -40,6 +40,7 @@ export function buildAppMenu(): Menu {
             label: 'ViewDeck',
             submenu: [
               { role: 'about' as const, label: 'About ViewDeck' },
+              { id: 'checkForUpdates', label: 'Check for Updates…', click: send('checkForUpdates') },
               { type: 'separator' as const },
               { id: 'settings', label: 'Settings…', accelerator: 'Cmd+,', click: send('settings') },
               { type: 'separator' as const },

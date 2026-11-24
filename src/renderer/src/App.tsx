@@ -14,6 +14,8 @@ import { Workspace } from '@renderer/features/workspace/Workspace'
 import { CommandPalette } from '@renderer/features/palette/CommandPalette'
 import { SettingsDialog } from '@renderer/features/settings/SettingsDialog'
 import { useApplyTheme } from '@renderer/lib/theme'
+import { checkForUpdatesNow } from '@renderer/lib/updates'
+import { UpdateBanner } from '@renderer/features/update/UpdateBanner'
 
 /**
  * Top-level screen router (connections home → AWS wizard → workspace) plus
@@ -58,6 +60,8 @@ export function App() {
             if (hasStagedEdits()) return actions.showToast('Commit or discard staged changes first.')
             if (session) return void leaveSession().then(() => setState({ screen: { name: 'aws-wizard' } }))
             return setState({ screen: { name: 'aws-wizard' } })
+          case 'checkForUpdates':
+            return void checkForUpdatesNow()
           case 'disconnect':
             if (hasStagedEdits()) return actions.showToast('Commit or discard staged changes first.')
             return session ? void leaveSession() : undefined
@@ -89,6 +93,7 @@ export function App() {
       )}
       <CommandPalette />
       <SettingsDialog />
+      <UpdateBanner />
       <Toaster />
     </ErrorBoundary>
   )

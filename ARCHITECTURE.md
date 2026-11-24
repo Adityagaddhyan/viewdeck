@@ -91,6 +91,10 @@ sequenceDiagram
 | `app:writeClipboard` | `{ text }` | `void` | `appHandlers.ts` → Electron `clipboard` (renderer copy actions) |
 | `app:closeWindow` | `void` | `void` | `appHandlers.ts` (Cmd+W with no tabs left) |
 | `app:saveFile` | `{ defaultName, content }` | `{ path \| null }` | `appHandlers.ts` → native Save dialog (`VIEWDECK_E2E_SAVE_DIR` bypasses it in e2e) |
+| `update:getStatus` | – | `UpdateStatus` | `updateHandlers.ts` → `UpdateService.current` |
+| `update:check` | – | `UpdateStatus` | `UpdateService.check()`: GitHub Releases latest vs `app.getVersion()` |
+| `update:download` | – | `UpdateStatus` | `UpdateService.download()` → `UpdateInstaller.prepare()` (download, SHA-256, `ditto`, `codesign`, bundle id/version) |
+| `update:restart` | – | – | `UpdateService.requestRestart()` then `app.quit()`; `before-quit` starts the swap + relaunch |
 | `aws:listProfiles` | `void` | `AwsProfile[]` | `awsHandlers.ts` → AwsProfileService |
 | `aws:getSsoStatus` | `{ profile }` | `SsoStatus` | `awsHandlers.ts` → AwsProfileService |
 | `aws:ssoLogin` | `{ profile }` | `SsoStatus` (after CLI exits) | `awsHandlers.ts` → AwsProfileService |
@@ -144,6 +148,7 @@ Handlers live in `src/main/ipc/handlers/`.
 | --- | --- | --- |
 | `tunnel:status` | `TunnelInfo` | SsmTunnelManager on every state transition |
 | `menu:command` | `{ command: MenuCommand }` | `menu.ts` when a native menu item is clicked; App.tsx dispatches it |
+| `update:status` | `UpdateStatus` | `UpdateService` on every lifecycle change (checking, available, download %, ready, error); `UpdateBanner` renders it |
 | `session:lost` | `{ sessionId, reason }` | SessionManager when a session's tunnel fails or closes |
 
 ## 4. AWS IAM token lifecycle
@@ -396,6 +401,18 @@ flowchart TD
   LIMIT 100`, count, info, copy name), tabs (close / close others / close all / duplicate),
   saved connections, and the native Cut/Copy/Paste menu on text fields (main `context-menu`
   handler). Sidebar tables are draggable into Monaco (`text/plain` = qualified name).
+- **Updates:** `UpdateService` (`src/main/update/`) checks GitHub Releases at launch and every
+  12 hours (Settings → "Check for updates", off in e2e), and on demand from the menu or ⌘K.
+  `UpdateBanner` (bottom-right card) offers **Update now**. `UpdateInstaller` then downloads
+  the arch's `ViewDeck-<v>-<arch>-mac.zip` while hashing it, checks it against the release's
+  `SHA256SUMS.txt`, extracts it with `ditto`, and verifies it with `codesign --verify --deep
+  --strict` and the Info.plist bundle id and version. It stages the result under
+  `<userData>/updates`. **Restart now** (or any normal quit) runs `SWAP_SCRIPT` through
+  `ChildProcessRegistry.spawnDetachedAfterExit`, the one process allowed to outlive the app.
+  It waits for our PID, swaps the bundle (restoring the old one on failure) and relaunches.
+  Squirrel/electron-updater isn't used because it requires a Developer ID signature. When
+  the app can't replace itself (dev build, running from the DMG or a translocated or
+  read-only location), the card links to the release page instead.
 - **Settings:** `SettingsDialog` (⌘, or menu) edits `AppSettings`: theme (dark, light or
   system, via `useApplyTheme` + light/dark Monaco themes), editor font size, page size,
   date display (local or UTC for formatted epochs), and per-tier "starts read-only" and
