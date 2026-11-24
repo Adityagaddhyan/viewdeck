@@ -59,7 +59,7 @@ jobs:
             echo '**Homebrew** (installs the AWS CLI and Session Manager plugin too):'
             echo
             echo '```sh'
-            echo 'brew install --cask adityagaddhyan/viewdeck/viewdeck'
+            echo 'brew install --cask adityagaddhyan/tap/viewdeck'
             echo '```'
             echo
             echo '**Download:** `ViewDeck-*-arm64.dmg` for Apple Silicon, `ViewDeck-*-x64.dmg` for Intel. Open it and drag ViewDeck to Applications.'

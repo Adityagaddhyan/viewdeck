@@ -40,7 +40,7 @@ with no bastion host, no SSH keys and no stored passwords. **Free forever.**
 that the AWS features use:
 
 ```sh
-brew install --cask adityagaddhyan/viewdeck/viewdeck
+brew install --cask adityagaddhyan/tap/viewdeck
 ```
 
 **Or download the app** from the [latest release](https://github.com/Adityagaddhyan/viewdeck/releases/latest):

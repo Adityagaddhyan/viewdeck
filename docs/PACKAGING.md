@@ -48,7 +48,7 @@ git tag v0.2.0 && git push origin main v0.2.0
 It checks that the tag matches `package.json` and runs `npm run verify`. It then builds the
 `.dmg` and `.zip` for arm64 and x64, verifies the signatures and publishes a GitHub Release
 with the files and `SHA256SUMS.txt`. Then update the Homebrew cask:
-`node scripts/bump-cask.mjs 0.2.0 ../homebrew-viewdeck`, commit and push in the tap repo.
+`node scripts/bump-cask.mjs 0.2.0 ../homebrew-tap`, commit and push in the tap repo.
 
 ## In-app updates
 
