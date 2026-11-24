@@ -18,6 +18,8 @@ const ICONS: Record<PaletteGroup, typeof Zap> = {
   Connections: Plug
 }
 /** Group order when the query is empty. When searching, results are ranked by score. */
+/** Items per group when the search box is empty. */
+const EMPTY_PER_GROUP = 8
 const ORDER: PaletteGroup[] = ['Actions', 'Starred', 'Tables', 'Recent queries', 'Schemas', 'Connections']
 
 function Highlight({ text, match }: { text: string; match: FuzzyResult }) {
@@ -50,9 +52,17 @@ export function CommandPalette() {
   }, [open])
 
   const results = useMemo(() => {
-    const ranked = fuzzyFilter(items ?? [], query, (i) => i.searchText ?? i.label, 80)
-    if (query.trim()) return ranked
-    return ranked.sort((a, b) => ORDER.indexOf(a.item.group) - ORDER.indexOf(b.item.group)).slice(0, 60)
+    if (query.trim()) return fuzzyFilter(items ?? [], query, (i) => i.searchText ?? i.label, 80)
+    // Empty query: a few items from EVERY group (in ORDER), so no group is crowded out by a big one.
+    const all = fuzzyFilter(items ?? [], '', (i) => i.searchText ?? i.label, Number.MAX_SAFE_INTEGER)
+    const perGroup = new Map<string, number>()
+    return all
+      .sort((a, b) => ORDER.indexOf(a.item.group) - ORDER.indexOf(b.item.group))
+      .filter((r) => {
+        const n = (perGroup.get(r.item.group) ?? 0) + 1
+        perGroup.set(r.item.group, n)
+        return n <= EMPTY_PER_GROUP
+      })
   }, [items, query])
 
   useEffect(() => setIndex(0), [query])

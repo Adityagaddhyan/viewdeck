@@ -13,6 +13,7 @@ export interface SavedWorkspace {
   tabs: Array<
     | { kind: 'query'; title: string; sql: string }
     | { kind: 'table'; title: string; schema: string; table: string; where?: string; orderBy?: string }
+    | { kind: 'diagram'; title: string; schema: string }
   >
 }
 
@@ -24,10 +25,12 @@ export function serializeWorkspace(tabs: Tab[], activeTabId: string | null): Sav
   return {
     v: 1,
     activeIndex: Math.max(0, tabs.findIndex((t) => t.id === activeTabId)),
-    tabs: tabs.map((t) =>
+    tabs: tabs.map((t): SavedWorkspace['tabs'][number] =>
       t.kind === 'query'
         ? { kind: 'query', title: t.title, sql: t.sql.slice(0, MAX_SQL) }
-        : { kind: 'table', title: t.title, schema: t.schema, table: t.table, where: t.savedFilter?.where || undefined, orderBy: t.savedFilter?.orderBy || undefined }
+        : t.kind === 'diagram'
+          ? { kind: 'diagram', title: t.title, schema: t.schema }
+          : { kind: 'table', title: t.title, schema: t.schema, table: t.table, where: t.savedFilter?.where || undefined, orderBy: t.savedFilter?.orderBy || undefined }
     )
   }
 }
@@ -36,10 +39,12 @@ export function restoreWorkspace(saved: unknown, newId: () => string): { tabs: T
   const w = saved as SavedWorkspace | null
   if (!w || w.v !== 1 || !Array.isArray(w.tabs)) return null
   const n = Date.now()
-  const tabs: Tab[] = w.tabs.map((t) =>
+  const tabs: Tab[] = w.tabs.map((t): Tab =>
     t.kind === 'query'
       ? { id: newId(), kind: 'query', title: t.title, sql: t.sql ?? '' }
-      : {
+      : t.kind === 'diagram'
+        ? { id: newId(), kind: 'diagram', title: t.title, schema: t.schema }
+        : {
           id: newId(),
           kind: 'table',
           title: t.title,

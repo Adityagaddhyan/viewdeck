@@ -14,6 +14,8 @@
  */
 
 /** Registered engine identifiers. Extend this union when adding a driver. */
+import type { SchemaGraph } from './diagram'
+
 export type DatabaseEngine = 'postgres'
 
 /** Static feature flags the UI reads to show or hide engine-specific features. */
@@ -28,6 +30,8 @@ export interface DriverCapabilities {
   supportsExplain: boolean
   /** A running editor query can be cancelled (`cancelQuery`). */
   supportsCancel: boolean
+  /** `getSchemaGraph` returns tables + foreign keys for the ER diagram. */
+  supportsSchemaGraph: boolean
 }
 
 /** How the driver authenticates. Resolved in main, never sent with secrets to the renderer. */
@@ -295,6 +299,8 @@ export interface DatabaseDriver {
   getObjectDefinition(kind: 'function' | 'sequence' | 'type', id: string): Promise<string>
   /** Every schema, table and column in one call (autocomplete / explorer cache). */
   getSchemaSnapshot(): Promise<SchemaSnapshot>
+  /** Tables, columns, keys and every foreign key touching `schema` (ER diagram). */
+  getSchemaGraph(schema: string): Promise<SchemaGraph>
   /** DDL, indexes, constraints, triggers and engine stats for the table info panel. */
   getTableDetails(schema: string, table: string): Promise<TableDetails>
   /**

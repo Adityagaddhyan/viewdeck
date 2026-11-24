@@ -91,6 +91,7 @@ sequenceDiagram
 | `app:writeClipboard` | `{ text }` | `void` | `appHandlers.ts` → Electron `clipboard` (renderer copy actions) |
 | `app:closeWindow` | `void` | `void` | `appHandlers.ts` (Cmd+W with no tabs left) |
 | `app:saveFile` | `{ defaultName, content }` | `{ path \| null }` | `appHandlers.ts` → native Save dialog (`VIEWDECK_E2E_SAVE_DIR` bypasses it in e2e) |
+| `db:getSchemaGraph` | `{ sessionId, schema }` | `SchemaGraph` | `dbHandlers.ts` → `PostgresDriver.getSchemaGraph` → `schemaGraph.ts` (tables, columns, PK/unique keys, FKs in and out of the schema) |
 | `update:getStatus` | – | `UpdateStatus` | `updateHandlers.ts` → `UpdateService.current` |
 | `update:check` | – | `UpdateStatus` | `UpdateService.check()`: GitHub Releases latest vs `app.getVersion()` |
 | `update:download` | – | `UpdateStatus` | `UpdateService.download()` → `UpdateInstaller.prepare()` (download, SHA-256, `ditto`, `codesign`, bundle id/version) |
@@ -401,6 +402,19 @@ flowchart TD
   LIMIT 100`, count, info, copy name), tabs (close / close others / close all / duplicate),
   saved connections, and the native Cut/Copy/Paste menu on text fields (main `context-menu`
   handler). Sidebar tables are draggable into Monaco (`text/plain` = qualified name).
+- **ER diagram:** `DiagramTab` (tab kind `diagram`, opened from the sidebar schema row, a
+  table's "Show in diagram" or ⌘K "Diagram: <schema>"). `db:getSchemaGraph` returns one
+  schema plus external FK endpoints in four catalog queries. `graphModel.ts` (pure, tested)
+  turns that into typed edges: cardinality from PK/unique keys, required from nullability.
+  `inferRelations.ts` adds `*_id` → table guesses, drawn dashed. Clusters come from connected
+  components split by a deterministic Louvain pass, with small clusters merged back
+  (`clusterMerge.ts`). It also finds hubs and isolated tables. `diagramLayout.ts` runs ELK in
+  a Web Worker (`layout.worker.ts`): `layered` inside each cluster, `rectpacking` for the
+  clusters. React Flow renders cards with semantic zoom: names only below 45%, and cluster
+  labels at constant screen size for the map view. Edges are crow's-foot SVG markers. Only
+  visible elements render. `diagramCache.ts` keeps the graph, layout and dragged positions
+  per connection in prefs, keyed by a structure fingerprint, so reopening is instant and the
+  schema refreshes in the background.
 - **Updates:** `UpdateService` (`src/main/update/`) checks GitHub Releases at launch and every
   12 hours (Settings → "Check for updates", off in e2e), and on demand from the menu or ⌘K.
   `UpdateBanner` (bottom-right card) offers **Update now**. `UpdateInstaller` then downloads

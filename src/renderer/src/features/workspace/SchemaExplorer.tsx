@@ -1,6 +1,6 @@
 /** Sidebar tree: schemas → tables/views, lazily loaded, with a filter box. */
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronRight, ClipboardCopy, Code2, Eye, Info, Layers, RefreshCw, Search, Table2 } from 'lucide-react'
+import { ChevronRight, ClipboardCopy, Code2, Copy, Eye, Info, Layers, Network, RefreshCw, Search, Table2 } from 'lucide-react'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from '@renderer/components/ui/context-menu'
 import { copyText } from '@renderer/lib/clipboard'
 import { quoteIfNeeded } from '../editor/completionContext'
@@ -35,12 +35,30 @@ function SchemaNode({ schema, filter, defaultOpen, reloadKey }: { schema: string
 
   return (
     <div>
-      <button className="flex h-6 w-full items-center gap-1 rounded px-1 text-left hover:bg-accent/60" onClick={() => setOpen(!open)}>
-        <ChevronRight className={cn('size-3 shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-90')} />
-        <Layers className="size-3 shrink-0 text-sky-400/80" />
-        <span className="truncate">{schema}</span>
-        {tables && <span className="ml-auto pr-1 text-[10px] text-muted-foreground">{tables.length}</span>}
-      </button>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div className="group/schema flex h-6 w-full items-center rounded hover:bg-accent/60 data-[state=open]:bg-accent">
+            <button className="flex h-6 min-w-0 flex-1 items-center gap-1 px-1 text-left" onClick={() => setOpen(!open)}>
+              <ChevronRight className={cn('size-3 shrink-0 text-muted-foreground transition-transform', expanded && 'rotate-90')} />
+              <Layers className="size-3 shrink-0 text-sky-400/80" />
+              <span className="truncate">{schema}</span>
+            </button>
+            <button className="hidden shrink-0 px-1 text-muted-foreground hover:text-foreground group-hover/schema:block" onClick={() => actions.openDiagram(schema)} title={`Open the ${schema} diagram`} aria-label={`Open ${schema} diagram`}>
+              <Network className="size-3" />
+            </button>
+            {tables && <span className="shrink-0 pr-1 text-[10px] text-muted-foreground group-hover/schema:hidden">{tables.length}</span>}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuLabel>{schema}</ContextMenuLabel>
+          <ContextMenuItem onSelect={() => actions.openDiagram(schema)}>
+            <Network /> Open diagram
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={() => void copyText(schema, 'Copied schema name')}>
+            <Copy /> Copy schema name
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
       {expanded && (
         <div className="ml-3 border-l border-border/60 pl-1">
           {!tables && !error && <Spinner className="m-1" />}
@@ -82,6 +100,9 @@ function SchemaNode({ schema, filter, defaultOpen, reloadKey }: { schema: string
                   <ContextMenuItem onSelect={() => actions.newQueryTab(`SELECT count(*)\nFROM ${qualified};`)}>Count rows in new tab</ContextMenuItem>
                   <ContextMenuItem onSelect={() => actions.openTable(schema, t.name, { info: true })}>
                     <Info /> Show info &amp; DDL
+                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => actions.openDiagram(schema, t.name)}>
+                    <Network /> Show in diagram
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem onSelect={() => void copyText(t.name, 'Copied table name')}>

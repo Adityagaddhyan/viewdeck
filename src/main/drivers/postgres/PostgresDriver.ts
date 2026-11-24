@@ -12,6 +12,8 @@
  * before or after the toggle all obey it. While locked, SQL that tries to flip
  * the setting back (or `BEGIN READ WRITE`) is rejected before it is sent.
  */
+import { loadSchemaGraph } from './schemaGraph'
+import type { SchemaGraph } from '@shared/types/diagram'
 import pg from 'pg'
 import type {
   CellValue,
@@ -65,7 +67,8 @@ export class PostgresDriver implements DatabaseDriver {
     supportsTransactions: true,
     supportsReadOnlySession: true,
     supportsExplain: true,
-    supportsCancel: true
+    supportsCancel: true,
+    supportsSchemaGraph: true
   }
 
   private pool: PgPoolLike | null = null
@@ -235,6 +238,10 @@ export class PostgresDriver implements DatabaseDriver {
 
   async getSchemaSnapshot(): Promise<SchemaSnapshot> {
     return this.withClient((c) => loadSchemaSnapshot(c))
+  }
+
+  async getSchemaGraph(schema: string): Promise<SchemaGraph> {
+    return this.withClient((c) => loadSchemaGraph(c, schema))
   }
 
   async getTableDetails(schema: string, table: string): Promise<TableDetails> {

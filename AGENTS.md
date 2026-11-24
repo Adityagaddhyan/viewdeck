@@ -63,6 +63,7 @@ src/
     types/driver.ts       DatabaseDriver contract + all DB DTOs (QueryResult, StagedChangeset...).
     types/aws.ts          AWS DTOs: AwsProfile, SsoStatus, RdsDatabase, TunnelTarget, TunnelInfo.
     types/connection.ts   SavedConnection (route + auth, no secrets), SessionInfo, QueryHistoryEntry.
+    types/diagram.ts      SchemaGraph DTOs for the ER diagram (tables, keys, FKs both directions).
   main/                   Electron main process (Node). All privileged work lives here.
     index.ts              App lifecycle, BrowserWindow, security flags, quit hooks.
     menu.ts               Native menu + app identity. Mirrored shortcuts use registerAccelerator:false
@@ -111,6 +112,7 @@ src/
     drivers/postgres/statementTimeout.ts StatementTimeoutTracker (statement_timeout synced at checkout).
     drivers/postgres/schemaObjects.ts   Functions / sequences / types + their CREATE definitions.
     drivers/postgres/explain.ts         EXPLAIN (FORMAT JSON) as a named statement; ANALYZE in BEGIN … ROLLBACK.
+    drivers/postgres/schemaGraph.ts     One schema's tables/columns/keys/FKs (4 catalog queries) for the ER diagram.
     db/SessionManager.ts       Live sessions: driver + tunnel paired lifecycle.
     db/resolveConnection.ts    SavedConnection → DriverConnectionConfig (+ opens tunnel).
     store/LocalStore.ts        node:sqlite at <userData>/viewdeck.sqlite + migrations.
@@ -172,6 +174,13 @@ src/
                           CompareRowsDialog (two rows side by side, differences highlighted),
                           resultFilter.ts (pure: SQL WHERE parser/evaluator for loaded rows; invalid → no filter).
     src/features/palette/ CommandPalette (Cmd+K), paletteItems.ts (sources), fuzzy.ts (pure matcher).
+    src/features/diagram/ ER diagram tab. Pure model: graphModel.ts (nodes, typed edges, clusters, hubs),
+                          inferRelations.ts (FK-less relationships from naming), joinPath.ts (shortest
+                          join path + SQL), clusterMerge.ts. View: DiagramTab (React Flow), TableNode /
+                          ClusterNode (semantic zoom), RelationEdge (crow's-foot markers), DiagramLegend (ⓘ),
+                          DiagramHover, DiagramSidebar (search, relate, clusters, hubs), useSchemaDiagram
+                          (cache → fetch → model → layout), diagramLayout.ts + layout.worker.ts (ELK in a
+                          Web Worker), diagramCache.ts (graph + layout + dragged positions per connection).
     src/lib/utils.ts      cn() helper.
     src/styles/globals.css Tailwind v4 + theme tokens (CSS variables, dark default).
 resources/                Bundled static assets: rds-global-bundle.pem (AWS RDS CA, all regions),

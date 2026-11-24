@@ -199,6 +199,8 @@ Legend: **P0** = devs hit this daily, **P1** = high-value polish, **P2** = nice 
 - [x] Right-click menus everywhere (grid, headers, sidebar, tabs, connections, native text menu).
 - [x] Fast suggestions: schema snapshot cached per connection (instant on next launch),
   synchronous in-memory index, no IPC per keystroke.
+- [x] ER diagram per schema: clusters, focus mode, crow's-foot legend, hover details, inferred
+  relationships, join-path finder with SQL, cached layout, pinch to zoom; handles 250+ tables.
 - [x] Query results: live SQL WHERE filter over the loaded rows (client-side, invalid → no
   filter, survives re-runs) and ⌘F find with match highlighting and Enter / ⇧Enter cycling.
 - [x] Theme picker in the header (Light / Dark / System, follows macOS live), also in ⌘K;

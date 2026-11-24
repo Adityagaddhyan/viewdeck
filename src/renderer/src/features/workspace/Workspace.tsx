@@ -5,7 +5,7 @@
  * text, results and staged edits survive tab switches.
  */
 import { useState } from 'react'
-import { Code2, Columns2, Plus, Power, RefreshCw, Search, SquarePen, Table2, X } from 'lucide-react'
+import { Code2, Columns2, Network, Plus, Power, RefreshCw, Search, SquarePen, Table2, X } from 'lucide-react'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@renderer/components/ui/context-menu'
 import { ENV_COLORS } from '@shared/environment'
 import { Button } from '@renderer/components/ui/button'
@@ -21,6 +21,7 @@ import { CompareRowsDialog } from '../grid/CompareRowsDialog'
 import { schemaCache } from '../editor/schemaCache'
 import { QueryTab } from '../editor/QueryTab'
 import { TableTab } from '../grid/TableTab'
+import { DiagramTab } from '../diagram/DiagramTab'
 import { ConnectionSwitcher } from './ConnectionSwitcher'
 import { ReadOnlyToggle } from './ReadOnlyToggle'
 import { ThemeMenu } from '../settings/ThemeMenu'
@@ -98,7 +99,7 @@ export function Workspace() {
                 onClick={() => actions.activateTab(t.id)}
                 onAuxClick={(e) => e.button === 1 && actions.closeTab(t.id)}
               >
-                {t.kind === 'query' ? <Code2 className="size-3 shrink-0" /> : <Table2 className="size-3 shrink-0" />}
+                {t.kind === 'query' ? <Code2 className="size-3 shrink-0" /> : t.kind === 'diagram' ? <Network className="size-3 shrink-0" /> : <Table2 className="size-3 shrink-0" />}
                 <span className="truncate">{t.title}</span>
                 {paneOf(split, t.id) && <Columns2 className="size-3 shrink-0 text-sky-400" aria-label={`In split view (${paneOf(split, t.id)})`} />}
                 <button
@@ -128,9 +129,12 @@ export function Workspace() {
                   <ContextMenuItem onSelect={() => duplicateQueryTab(t.id)}>
                     Duplicate query tab
                   </ContextMenuItem>
-                ) : (
-                  <ContextMenuItem onSelect={() => actions.openTable(t.schema, t.table, { info: true })}>Show info &amp; DDL</ContextMenuItem>
-                )}
+                ) : t.kind === 'table' ? (
+                  <>
+                    <ContextMenuItem onSelect={() => actions.openTable(t.schema, t.table, { info: true })}>Show info &amp; DDL</ContextMenuItem>
+                    <ContextMenuItem onSelect={() => actions.openDiagram(t.schema, t.table)}>Show in diagram</ContextMenuItem>
+                  </>
+                ) : null}
                 <ContextMenuItem onSelect={() => actions.newQueryTab()} shortcut={`${MOD_LABEL}T`}>
                   New query tab
                 </ContextMenuItem>
@@ -173,6 +177,8 @@ export function Workspace() {
               >
                 {t.kind === 'query' ? (
                   <QueryTab tabId={t.id} initialSql={t.sql} active={t.id === activeTabId} />
+                ) : t.kind === 'diagram' ? (
+                  <DiagramTab schema={t.schema} active={t.id === activeTabId} focusRequest={t.focusRequest} />
                 ) : (
                   <TableTab tabId={t.id} schema={t.schema} table={t.table} active={t.id === activeTabId} infoRequest={t.infoRequest} filterRequest={t.filterRequest} />
                 )}

@@ -100,6 +100,7 @@ export async function buildPaletteItems(mod: string): Promise<PaletteItem[]> {
       })
     }
     for (const s of schemas) items.push({ id: `s:${s}`, group: 'Schemas', label: s, detail: 'filter tables', run: () => `${s}.` })
+    for (const s of schemas) items.push({ id: `d:${s}`, group: 'Schemas', label: `Diagram: ${s}`, searchText: `diagram er erd schema relationships ${s}`, detail: 'ER diagram', run: () => actions.openDiagram(s) })
     const seen = new Set<string>()
     for (const h of history) {
       if (h.error || seen.has(h.sql)) continue

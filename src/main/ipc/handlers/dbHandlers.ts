@@ -87,6 +87,7 @@ export function registerDbHandlers(): void {
     s.sessions.driver(sid(req)).getPrimaryKeys(requireString(req?.schema, 'schema'), requireString(req?.table, 'table'))
   )
   registerHandler('db:getSchemaSnapshot', (req) => s.sessions.driver(sid(req)).getSchemaSnapshot())
+  registerHandler('db:getSchemaGraph', (req) => s.sessions.driver(sid(req)).getSchemaGraph(requireString(req?.schema, 'schema')))
   registerHandler('db:getTableDetails', (req) =>
     s.sessions.driver(sid(req)).getTableDetails(requireString(req?.schema, 'schema'), requireString(req?.table, 'table'))
   )

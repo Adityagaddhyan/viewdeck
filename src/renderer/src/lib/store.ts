@@ -27,6 +27,14 @@ export type Tab =
       /** Last applied filter, persisted with the workspace. */
       savedFilter?: { where: string; orderBy: string }
     }
+  | {
+      id: string
+      kind: 'diagram'
+      title: string
+      schema: string
+      /** Ask the diagram to focus this table (`n` makes repeats distinct). */
+      focusRequest?: { table: string; n: number }
+    }
 
 export type Screen = { name: 'home' } | { name: 'aws-wizard' } | { name: 'workspace' }
 
@@ -140,6 +148,19 @@ export const actions = {
       }))
     }
     const tab: Tab = { id: newTabId(), kind: 'table', title: table, schema, table, infoRequest, filterRequest }
+    setState((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
+  },
+  /** Opens (or reuses) the ER diagram tab for `schema`, optionally focusing one table. */
+  openDiagram(schema: string, focusTable?: string): void {
+    const focusRequest = focusTable ? { table: focusTable, n: Date.now() } : undefined
+    const existing = state.tabs.find((t) => t.kind === 'diagram' && t.schema === schema)
+    if (existing) {
+      return setState((s) => ({
+        activeTabId: existing.id,
+        tabs: s.tabs.map((t) => (t.id === existing.id && t.kind === 'diagram' && focusRequest ? { ...t, focusRequest } : t))
+      }))
+    }
+    const tab: Tab = { id: newTabId(), kind: 'diagram', title: `${schema} diagram`, schema, focusRequest }
     setState((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }))
   },
   newQueryTab(sql = ''): void {

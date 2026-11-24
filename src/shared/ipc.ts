@@ -13,6 +13,7 @@
  * `src/main/ipc/handlers/`, and record it in ARCHITECTURE.md § IPC channels.
  */
 import type { UpdateStatus } from './update'
+import type { SchemaGraph } from './types/diagram'
 import type { IpcResult } from './types/result'
 import type { AppSettings } from './settings'
 import type {
@@ -149,6 +150,8 @@ export interface IpcContract {
   'db:getPrimaryKeys': { request: SessionReq<{ schema: string; table: string }>; response: string[] }
   /** All schemas, tables and columns in one call, cached by the renderer for instant autocomplete. */
   'db:getSchemaSnapshot': { request: SessionReq; response: SchemaSnapshot }
+  /** One schema's tables, columns, keys and foreign keys (both directions) for the ER diagram. */
+  'db:getSchemaGraph': { request: SessionReq<{ schema: string }>; response: SchemaGraph }
   /** Table info panel: DDL, indexes, constraints, referencing FKs, triggers, stats. */
   'db:getTableDetails': { request: SessionReq<{ schema: string; table: string }>; response: TableDetails }
   /** Functions, sequences and user types in a schema (sidebar). */
@@ -222,6 +225,7 @@ export const IPC_CHANNELS = [
   'db:getTableColumns',
   'db:getPrimaryKeys',
   'db:getSchemaSnapshot',
+  'db:getSchemaGraph',
   'db:getTableDetails',
   'db:listSchemaObjects',
   'db:getObjectDefinition',

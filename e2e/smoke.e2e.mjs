@@ -552,6 +552,28 @@ try {
   await shot(page, '04k-sidebar')
   step('sidebar shows Types / Functions with definitions; Generate DROP writes (not runs) the statement')
 
+  // 4l. ER diagram: open from the schema row, FK edge with crow's-foot markers, focus, hover, legend.
+  await page.locator('aside').getByText('public', { exact: true }).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Open diagram' }).click()
+  const diagram = page.locator('[data-active="true"] [data-testid="diagram-canvas"]')
+  await diagram.locator('[data-table="public.e2e_orders"]').waitFor({ timeout: 30000 })
+  await diagram.locator('[data-table="public.e2e_lines"]').waitFor()
+  assert.ok((await diagram.locator('.react-flow__edge').count()) >= 1, 'the e2e_lines → e2e_orders FK is drawn')
+  assert.ok(await diagram.locator('.react-flow__edge path[marker-end*="vd-many"]').count(), "crow's-foot marker on the child end")
+  await diagram.locator('[data-table="public.e2e_orders"]').click()
+  await page.locator('[data-active="true"]').getByText(/Relationships of e2e_orders/i).waitFor()
+  await page.locator('[data-active="true"]').getByText(/Focus: e2e_orders/).waitFor()
+  await diagram.locator('[data-table="public.e2e_lines"]').hover()
+  await diagram.getByText(/Each e2e_orders can have many e2e_lines rows|e2e_lines/).first().waitFor()
+  await page.getByRole('button', { name: 'Legend' }).click()
+  await page.getByRole('dialog', { name: 'Diagram legend' }).getByText('Many-to-one, required').waitFor()
+  await shot(page, '04l-diagram')
+  await page.keyboard.press('Escape')
+  await page.getByRole('dialog', { name: 'Diagram legend' }).waitFor({ state: 'detached' })
+  await clickMenu('closeTab')
+  await diagram.waitFor({ state: 'detached' })
+  step('ER diagram opens from the sidebar: FK edges with crow\'s-foot ends, focus, hover details, legend')
+
   // 5. Read-only lock is server-enforced, including for hand-written SQL.
   await page.getByRole('button', { name: 'Read-write' }).click()
   await page.getByRole('button', { name: 'Read-only' }).waitFor()
