@@ -448,6 +448,26 @@ try {
   assert.ok((await clipboard()).includes(' one\n-------\n first\n(1 row)'), await clipboard())
   step('Run all runs every statement past a failure; Copy all copies queries + results (Markdown / text)')
 
+  // 4i3b2. SQL editor find & replace (VS Code style: ⌘F, the arrow opens Replace, ⌥⌘F opens both).
+  await q.locator('.monaco-editor').first().click()
+  await page.keyboard.press(`${mod}+f`)
+  const findWidget = q.locator('.find-widget.visible')
+  await findWidget.waitFor()
+  await page.keyboard.type('select')
+  await findWidget.locator('.matchesCount').filter({ hasText: /of 3/ }).waitFor()
+  await findWidget.getByRole('button', { name: /Toggle Replace/ }).click()
+  await findWidget.getByRole('textbox', { name: 'Replace' }).fill('SELECT')
+  await findWidget.getByRole('button', { name: /Replace All/ }).click()
+  await page.keyboard.press('Escape')
+  await findWidget.waitFor({ state: 'detached' }).catch(() => {})
+  assert.equal(await q.locator('.monaco-editor .view-lines').first().innerText().then((t) => (t.match(/SELECT/g) ?? []).length), 3)
+  await q.locator('.monaco-editor').first().click()
+  await page.keyboard.press(`${mod}+Alt+f`)
+  await q.locator('.find-widget.visible.replaceToggled').waitFor()
+  await shot(page, '04i3b2-editor-replace')
+  await page.keyboard.press('Escape')
+  step('SQL editor: Cmd+F find, arrow opens Replace, Replace All; Cmd+Alt+F opens find & replace')
+
   // 4i3c. Result filter (live client-side WHERE; invalid = no filter) and Cmd+F find in results.
   await q.locator('.monaco-editor').first().click()
   await page.keyboard.press(`${mod}+a`)

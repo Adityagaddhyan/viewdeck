@@ -203,6 +203,9 @@ export const SqlEditor = forwardRef<
         fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
+        // VS Code-style find: ⌘F find (the arrow opens Replace), ⌥⌘F find + replace. Extra space on top
+        // keeps the widget from covering line 1; a selection seeds the search.
+        find: { addExtraSpaceOnTop: true, seedSearchStringFromSelection: 'selection', autoFindInSelection: 'multiline' },
         automaticLayout: true,
         tabSize: 2,
         wordWrap: 'on',

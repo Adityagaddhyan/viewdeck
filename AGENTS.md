@@ -282,7 +282,7 @@ Path aliases: `@shared/*` → `src/shared/*` (all bundles), `@renderer/*` →
 | `Cmd/Ctrl+E` / `Cmd/Ctrl+Shift+E` | EXPLAIN / EXPLAIN ANALYZE (rolled back) the selection or statement at the cursor | `SqlEditor` (`addAction`) |
 | `Cmd/Ctrl+S` | Review staged grid changes (SQL diff drawer) | `TableTab` (`useHotkey`, active tab only) |
 | `Cmd/Ctrl+T` | New query tab | `App.tsx` |
-| `Cmd/Ctrl+F` | Table tab: focus the filter bar (`Enter` applies, `Esc` clears). Query tab: find in results (`Enter` / `Shift+Enter` next / previous, `Esc` clears); inside the SQL editor it stays Monaco's Find | `TableTab` / `QueryTab` (`useHotkey`, active tab only) |
+| `Cmd/Ctrl+F` | Table tab: focus the filter bar (`Enter` applies, `Esc` clears). Query tab: find in results (`Enter` / `Shift+Enter` next / previous, `Esc` clears); inside the SQL editor it is Monaco's VS Code-style Find (the arrow opens Replace; `Cmd/Ctrl+Alt+F` opens Find + Replace). Cell inspector: find in the value | `TableTab` / `QueryTab` (`useHotkey`, active tab only) |
 | `Cmd/Ctrl+,` | Settings | `App.tsx` + menu |
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Next / previous workspace tab (literal Ctrl on every OS) | `App.tsx` (`useHotkey('ctrl+tab')`) |
 | Arrows, `Tab`, `Home`/`End`, `Cmd+↑/↓` | Move the grid cell cursor; `Shift` extends row selection; `Cmd+A` selects all rows | `useGridSelection` |
