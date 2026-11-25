@@ -166,7 +166,8 @@ src/
                           SqlDiffDrawer (Cmd+S), stagedChanges.ts (pure staged-edit model),
                           FilterBar (raw WHERE / ORDER BY, Cmd+F), TableInfoDrawer (ⓘ: stats, indexes, DDL),
                           GridContextMenu (right-click), useGridSelection (cursor/rows/keyboard),
-                          ValueViewer + JsonTree (cell inspector, collapsible JSON), copyFormats.ts /
+                          ValueViewer + JsonTree (cell inspector, collapsible JSON;
+                          ⌘F find via ValueFindBar + valueSearch.ts, pure), copyFormats.ts /
                           jsonPath.ts (pure clipboard + path builders), sortOrder.ts (header sort ⇄ ORDER BY),
                           gridColumns.tsx (columns + cell display/tooltips), valueFormat.ts (timestamps,
                           epoch → date), fkLinks.ts (FK navigation targets), useTableExtras.ts

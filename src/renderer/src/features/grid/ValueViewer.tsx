@@ -3,9 +3,10 @@
  * a JSON object/array) opens as a collapsible tree with expand/collapse all and
  * a pretty "Raw" view. Other values show wrapped. When `onSave` is provided
  * (session unlocked, row editable), the value can be edited, and the edit is
- * STAGED like any grid edit (ADR-003), never written directly.
+ * STAGED like any grid edit (ADR-003), never written directly. ⌘F finds text in the
+ * value: in the tree it expands to and highlights matching keys and values.
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronsDownUp, ChevronsUpDown, Copy, Pencil } from 'lucide-react'
 import type { CellValue } from '@shared/types/driver'
 import { Button } from '@renderer/components/ui/button'
@@ -16,6 +17,8 @@ import { cn } from '@renderer/lib/utils'
 import { parseJsonCell } from './copyFormats'
 import { containerPaths } from './jsonPath'
 import { JsonTree } from './JsonTree'
+import { Highlight, ValueFindBar } from './ValueFindBar'
+import { ancestorKeys, jsonMatches, textMatches } from './valueSearch'
 
 export interface ViewerTarget {
   column: string
@@ -31,17 +34,50 @@ export function ValueViewer({ target, onClose }: { target: ViewerTarget | null; 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [draft, setDraft] = useState('')
   const [draftError, setDraftError] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [hit, setHit] = useState(0)
+  const findRef = useRef<HTMLInputElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!target) return
     setMode(parsed.ok ? 'tree' : 'raw')
     setExpanded(new Set(parsed.ok ? containerPaths(parsed.value, 2) : []))
     setDraftError(null)
+    setQuery('')
   }, [target, parsed])
+
+  const pretty = !target ? '' : parsed.ok ? JSON.stringify(parsed.value, null, 2) : target.value === null ? '' : String(target.value)
+  const treeHits = useMemo(() => (parsed.ok ? jsonMatches(parsed.value, query) : []), [parsed, query])
+  const rawHits = useMemo(() => textMatches(pretty, query), [pretty, query])
+  const total = mode === 'tree' ? treeHits.length : mode === 'raw' ? rawHits.length : 0
+  const current = total === 0 ? 0 : Math.min(hit, total - 1)
+
+  // New query: start at the first match and open every container above a tree match.
+  useEffect(() => {
+    setHit(0)
+    if (treeHits.length > 0) setExpanded((s) => new Set([...s, ...ancestorKeys(treeHits)]))
+  }, [treeHits])
+
+  useEffect(() => {
+    const el = bodyRef.current?.querySelector('[data-current-match]')
+    el?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [current, query, mode, expanded])
 
   if (!target) return null
   const isJson = parsed.ok
-  const pretty = isJson ? JSON.stringify(parsed.value, null, 2) : target.value === null ? '' : String(target.value)
+  const step = (d: 1 | -1): void => {
+    if (total > 0) setHit((current + d + total) % total)
+  }
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'f' && mode !== 'edit') {
+      // Keep the grid's / query tab's ⌘F (window listeners) from also firing.
+      e.preventDefault()
+      e.stopPropagation()
+      findRef.current?.focus()
+      findRef.current?.select()
+    }
+  }
 
   const startEdit = (): void => {
     setDraft(pretty)
@@ -64,7 +100,15 @@ export function ValueViewer({ target, onClose }: { target: ViewerTarget | null; 
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent title={target.column} description={`${target.dataType}${target.value === null ? ' · NULL' : ` · ${pretty.length.toLocaleString()} chars`}`}>
+      <SheetContent
+        onKeyDown={onKeyDown}
+        onEscapeKeyDown={(e) => {
+          if (query !== '') {
+            e.preventDefault() // first Esc clears the find, the next one closes
+            setQuery('')
+          }
+        }}
+        title={target.column} description={`${target.dataType}${target.value === null ? ' · NULL' : ` · ${pretty.length.toLocaleString()} chars`}`}>
         <div className="flex shrink-0 items-center gap-1 border-b px-3 py-1.5">
           {isJson && (
             <>
@@ -99,13 +143,18 @@ export function ValueViewer({ target, onClose }: { target: ViewerTarget | null; 
             )}
           </div>
         </div>
-        <div className="min-h-0 flex-1 overflow-auto p-3">
+        {mode !== 'edit' && target.value !== null && (
+          <ValueFindBar ref={findRef} query={query} onQuery={setQuery} current={current} total={total} onStep={step} />
+        )}
+        <div ref={bodyRef} className="min-h-0 flex-1 overflow-auto p-3">
           {target.value === null && mode !== 'edit' && <p className="italic text-muted-foreground">NULL</p>}
           {isJson && mode === 'tree' && (
             <JsonTree
               value={parsed.value}
               column={target.column}
               expanded={expanded}
+              query={query}
+              currentKey={mode === 'tree' && treeHits[current] ? JSON.stringify(treeHits[current]) : null}
               onToggle={(k) =>
                 setExpanded((s) => {
                   const n = new Set(s)
@@ -117,7 +166,9 @@ export function ValueViewer({ target, onClose }: { target: ViewerTarget | null; 
             />
           )}
           {mode === 'raw' && target.value !== null && (
-            <pre className="whitespace-pre-wrap break-words font-mono text-[12px] leading-relaxed select-text">{pretty}</pre>
+            <pre className="whitespace-pre-wrap break-words font-mono text-[12px] leading-relaxed select-text">
+              <Highlight text={pretty} query={query} current={current} />
+            </pre>
           )}
           {mode === 'edit' && (
             <div className="flex h-full flex-col gap-2">

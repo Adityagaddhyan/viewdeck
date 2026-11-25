@@ -231,12 +231,27 @@ try {
   await viewer.getByText('tier', { exact: true }).waitFor()
   await viewer.getByRole('button', { name: /Collapse/ }).click()
   await viewer.getByText('tier', { exact: true }).waitFor({ state: 'detached' })
+  // Find in value: ⌘F focuses the find bar; a match inside a collapsed node opens its parents.
+  await page.keyboard.press('Meta+f')
+  await page.keyboard.type('sku')
+  await viewer.getByTestId('find-count').filter({ hasText: '1 / 1' }).waitFor()
+  assert.match(await viewer.locator('[data-current-match]').innerText(), /SKU-1/)
+  await viewer.getByLabel('Find in value').fill('i')
+  // jsonb stores keys shortest first, so "items" renders before "customer" → "tier".
+  await viewer.getByTestId('find-count').filter({ hasText: '1 / 2' }).waitFor()
+  assert.match(await viewer.locator('[data-current-match]').innerText(), /items/)
+  await page.keyboard.press('Enter')
+  await viewer.getByTestId('find-count').filter({ hasText: '2 / 2' }).waitFor()
+  assert.match(await viewer.locator('[data-current-match]').innerText(), /tier/)
+  await shot(page, '04c2-json-find')
+  await page.keyboard.press('Escape') // first Esc clears the find, the panel stays
+  await viewer.getByTestId('find-count').waitFor({ state: 'detached' })
   await viewer.getByRole('button', { name: /Expand all/ }).click()
   await viewer.getByText('SKU-1', { exact: false }).waitFor()
   await page.waitForTimeout(300)
   await shot(page, '04c-json-viewer')
   await page.keyboard.press('Escape')
-  step('double-click on jsonb opens a collapsible JSON tree (expand / collapse all)')
+  step('double-click on jsonb opens a collapsible JSON tree (expand / collapse all, ⌘F find)')
 
   // 4d2. Epoch → date formatting (header menu, persisted) and the enum dropdown editor.
   await activeTab.locator('.sticky button').filter({ hasText: /^created_ms/ }).click({ button: 'right' })
