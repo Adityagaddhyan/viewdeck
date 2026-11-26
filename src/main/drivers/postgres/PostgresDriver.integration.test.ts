@@ -249,6 +249,18 @@ describe.skipIf(!enabled)('PostgresDriver (integration)', () => {
     expect((await driver.executeQuery('SELECT 2')).rows[0]?.[0]).toBe(2)
   })
 
+  it('a socket error on a checked-out pool client (VPN drop: read ETIMEDOUT) does not crash the main process', async () => {
+    // pg-pool only listens for 'error' on IDLE clients. Without the driver's own listener, emitting
+    // 'error' on a checked-out client throws (an uncaught exception in Electron's main process).
+    const pool = (driver as unknown as { pool: { connect(): Promise<{ emit(e: string, err: Error): boolean; release(destroy?: boolean): void }> } }).pool
+    const client = await pool.connect()
+    const err = Object.assign(new Error('read ETIMEDOUT'), { code: 'ETIMEDOUT' })
+    expect(() => client.emit('error', err)).not.toThrow()
+    client.release(true)
+    expect((await driver.executeQuery('SELECT 3')).rows[0]?.[0]).toBe(3)
+    expect(await driver.ping()).toBeGreaterThanOrEqual(0)
+  })
+
   it('explain returns a JSON plan; ANALYZE of a write is rolled back; multi-statement rejected', async () => {
     const plain = await driver.explain('SELECT * FROM vd_test."Orders" WHERE id = 1', { analyze: false })
     expect(plain.analyzed).toBe(false)

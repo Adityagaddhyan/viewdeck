@@ -55,8 +55,24 @@ export interface PgPoolLike {
   connect(): Promise<pg.PoolClient>
   end(): Promise<void>
   on(event: 'error', listener: (err: Error) => void): unknown
+  on(event: 'connect', listener: (client: pg.PoolClient) => void): unknown
 }
 export type PoolFactory = (config: pg.PoolConfig) => PgPoolLike
+
+/**
+ * Makes connection loss survivable. pg-pool only listens for 'error' on IDLE clients
+ * (re-emitted as pool 'error'); while a client is checked out it has no listener, so a
+ * dead socket (VPN drop, tunnel closed, NAT timeout: `read ETIMEDOUT`) emits an
+ * unhandled 'error' and crashes Electron's main process. Every client gets a permanent
+ * no-op listener; the failure still reaches the running query as a rejected promise.
+ */
+export function guardPool<P extends PgPoolLike>(pool: P): P {
+  pool.on('error', () => {})
+  pool.on('connect', (client) => {
+    client.on('error', () => {})
+  })
+  return pool
+}
 
 export { MAX_RESULT_ROWS } from './catalog'
 
@@ -91,10 +107,7 @@ export class PostgresDriver implements DatabaseDriver {
     this.ctx = { iam: config.auth.kind === 'rds-iam', user: config.auth.user, host: config.tls.servername ?? config.host }
     this.ro.enabled = config.readOnly
     this.timeout.ms = config.statementTimeoutMs
-    const pool = this.poolFactory(await this.poolConfig(config))
-    // An idle client dropped by the server (or a dead tunnel) emits 'error' on
-    // the pool. Without a listener, that would crash the main process.
-    pool.on('error', () => {})
+    const pool = guardPool(this.poolFactory(await this.poolConfig(config)))
     this.pool = pool
     try {
       await this.loadTypeNames()
@@ -138,8 +151,7 @@ export class PostgresDriver implements DatabaseDriver {
 
   async testConnection(config: DriverConnectionConfig): Promise<{ serverVersion: string }> {
     const ctx: PgErrorContext = { iam: config.auth.kind === 'rds-iam', user: config.auth.user, host: config.tls.servername ?? config.host }
-    const pool = this.poolFactory({ ...(await this.poolConfig(config)), max: 1 })
-    pool.on('error', () => {})
+    const pool = guardPool(this.poolFactory({ ...(await this.poolConfig(config)), max: 1 }))
     try {
       return await withPgErrors(ctx, async () => {
         const client = await pool.connect()

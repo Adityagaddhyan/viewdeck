@@ -13,6 +13,7 @@ import { getServices, servicesStarted } from './services'
 import { resourcePath } from './resources'
 import { applyNativeTheme, windowBackground } from './nativeTheme'
 import { normalizeSettings } from '@shared/settings'
+import { installCrashGuard } from './crashGuard'
 
 /*
  * Test isolation (used by e2e/): must run before app 'ready'.
@@ -118,6 +119,7 @@ app.on('will-quit', () => {
   s.processes.killAllSync()
   s.store.close()
 })
+installCrashGuard()
 process.on('exit', () => {
   if (servicesStarted()) getServices().processes.killAllSync()
 })

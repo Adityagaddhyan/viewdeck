@@ -76,6 +76,7 @@ src/
     ipc/validate.ts       Runtime validation of renderer input (requireString / requirePort).
     ipc/validateDb.ts     Validation of connection settings, SQL params and staged changesets.
     nativeTheme.ts        nativeTheme.themeSource + window background follow the theme setting.
+    crashGuard.ts         Uncaught-exception net: dropped-socket errors are logged, real bugs still show a dialog.
     update/UpdateService.ts   GitHub Releases check, update lifecycle (UpdateStatus), 12 h schedule.
     update/UpdateInstaller.ts Download + SHA-256 + ditto + codesign verify; post-exit bundle swap script.
     ipc/handlers/updateHandlers.ts  update:getStatus / check / download / restart.
